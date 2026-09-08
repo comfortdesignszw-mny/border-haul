@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BorderHaul — Southern Africa Freight Board</title>
+<meta name="description" content="Offline-first load board matching truckers and shippers across Southern Africa by GPS location and corridor.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#12161F">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12161F;
+    --slate:#1B2129;
+    --slate-2:#242C37;
+    --paper:#E4DFCE;
+    --paper-2:#EEEADC;
+    --paper-ink:#2A2620;
+    --orange:#E1571F;
+    --orange-dim:#B8451A;
+    --gold:#C9962E;
+    --green:#3F8F5F;
+    --red:#B23A2E;
+    --text:#E9E6DC;
+    --text-muted:#8D96A6;
+    --border:#333D4D;
+    --border-light:#4a5468;
+    --radius:3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    font-variant-numeric:tabular-nums;
+    -webkit-tap-highlight-color:transparent;
+    overscroll-behavior:none;
+  }
+  h1,h2,h3,.disp{
+    font-family:'Barlow Condensed',system-ui,sans-serif;
+    font-weight:700;
+    letter-spacing:0.2px;
+    margin:0;
+  }
+  button{font-family:inherit;}
+  a{color:inherit;}
+  #app{max-width:1180px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;}
+
+  /* ---------- header / dashboard bar ---------- */
+  header.topbar{
+    background:var(--slate);
+    border-bottom:1px solid var(--border);
+    padding:10px 14px;
+    display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:30;
+  }
+  .brand{display:flex;align-items:center;gap:9px;}
+  .brand .mark{
+    width:28px;height:28px;flex:none;
+    background:var(--ink);border:1.5px solid var(--paper);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Barlow Condensed';font-weight:800;font-size:13px;color:var(--paper);
+  }
+  .brand .name{font-size:21px;letter-spacing:0.5px;}
+  .brand .name b{color:var(--orange);}
+  .telltales{display:flex;align-items:center;gap:12px;}
+  .telltale{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 3px rgba(178,58,46,0.15);flex:none;}
+  .dot.on{background:var(--green);box-shadow:0 0 0 3px rgba(63,143,95,0.18);}
+  .dot.warn{background:var(--gold);box-shadow:0 0 0 3px rgba(201,150,46,0.18);}
+
+  /* ---------- control row: role + view toggle ---------- */
+  .controlrow{
+    display:flex;gap:8px;padding:10px 14px;background:var(--ink);
+    border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;
+  }
+  .segmented{display:flex;border:1px solid var(--border-light);border-radius:var(--radius);overflow:hidden;}
+  .segmented button{
+    background:transparent;border:none;color:var(--text-muted);
+    padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer;
+    border-right:1px solid var(--border-light);
+  }
+  .segmented button:last-child{border-right:none;}
+  .segmented button.active{background:var(--orange);color:#fff;}
+  .spacer{flex:1;}
+  .btn{
+    background:var(--orange);color:#fff;border:none;border-radius:var(--radius);
+    padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;
+  }
+  .btn:hover{background:var(--orange-dim);}
+  .btn.ghost{background:transparent;border:1px solid var(--border-light);color:var(--text);}
+  .btn.ghost:hover{border-color:var(--paper);}
+  .btn.small{padding:5px 10px;font-size:12px;}
+  .btn.green{background:var(--green);}
+  .btn.green:hover{background:#317249;}
+
+  /* ---------- filter bar ---------- */
+  .filterbar{display:flex;gap:8px;padding:10px 14px;flex-wrap:wrap;background:var(--ink);}
+  select,input[type=text],input[type=number],input[type=date],textarea{
+    background:var(--slate-2);color:var(--text);border:1px solid var(--border-light);
+    border-radius:var(--radius);padding:8px 10px;font-size:13px;font-family:inherit;
+  }
+  select:focus,input:focus,textarea:focus{outline:2px solid var(--orange);outline-offset:1px;}
+  label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;}
+
+  main{flex:1;padding:0 0 74px 0;}
+  .view{display:none;padding:0 14px 20px;}
+  .view.active{display:block;}
+
+  /* ---------- manifest ledger (load board) ---------- */
+  .ledger{border:1px solid var(--border);background:var(--slate);}
+  .ledger-head{
+    display:grid;grid-template-columns:1.6fr 1.1fr .8fr .9fr .7fr;
+    padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.6px;
+    color:var(--text-muted);border-bottom:1px solid var(--border);
+  }
+  .row{
+    display:grid;grid-template-columns:1.6fr 1.1fr .8fr .9fr .7fr;
+    padding:13px 12px;border-bottom:1px solid var(--border);align-items:center;
+    cursor:pointer;background:var(--paper);color:var(--paper-ink);
+  }
+  .row:nth-child(even){background:var(--paper-2);}
+  .row:hover{outline:1.5px solid var(--orange);outline-offset:-1.5px;}
+  .row:last-child{border-bottom:none;}
+  .route{font-family:'Barlow Condensed';font-weight:700;font-size:17px;}
+  .route small{display:block;font-family:'Inter';font-weight:500;font-size:11.5px;color:#5c5744;text-transform:none;letter-spacing:0;margin-top:2px;}
+  .cargo{font-size:13px;}
+  .cargo .type{font-weight:600;}
+  .cargo .sub{color:#6b6656;font-size:12px;}
+  .price{font-weight:700;font-size:14.5px;}
+  .dist{font-size:13px;font-weight:600;color:var(--orange-dim);}
+  .dist small{display:block;font-weight:500;color:#8a8570;font-size:10.5px;text-transform:uppercase;}
+  .badge{
+    display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;
+    padding:3px 7px;border-radius:2px;
+  }
+  .badge.posted{background:#dfe4ea;color:#3a4250;}
+  .badge.matched{background:#f0e3c2;color:#7a5a11;}
+  .badge.transit{background:#cfe0e8;color:#204a5c;}
+  .badge.delivered{background:#cfe9d6;color:#245a37;}
+  .empty{padding:30px 14px;text-align:center;color:var(--text-muted);font-size:13.5px;}
+
+  /* ---------- map ---------- */
+  .mapwrap{border:1px solid var(--border);background:var(--slate-2);position:relative;}
+  svg.mapsvg{display:block;width:100%;height:auto;}
+  .maplabel{font-family:'Barlow Condensed';font-size:6px;fill:var(--text-muted);letter-spacing:0.3px;}
+  .pin-tip{
+    position:absolute;pointer-events:none;background:var(--paper);color:var(--paper-ink);
+    font-size:11.5px;padding:6px 8px;border-radius:2px;transform:translate(-50%,-115%);
+    box-shadow:0 3px 10px rgba(0,0,0,0.4);white-space:nowrap;z-index:5;
+  }
+
+  /* ---------- cards / forms ---------- */
+  .panel{background:var(--slate);border:1px solid var(--border);padding:16px;margin-bottom:14px;}
+  .panel h2{font-size:20px;margin-bottom:3px;}
+  .panel .hint{color:var(--text-muted);font-size:12.5px;margin-bottom:14px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .field{margin-bottom:12px;}
+  .field select,.field input,.field textarea{width:100%;}
+  .inline-btn-row{display:flex;gap:8px;align-items:center;margin-top:4px;}
+  .geo-status{font-size:12px;color:var(--text-muted);margin-top:6px;}
+  .toggle-tabs{display:flex;gap:6px;margin-bottom:14px;}
+  .toggle-tabs button{flex:1;}
+
+  /* match card */
+  .matchcard{
+    background:var(--slate-2);border:1px solid var(--border);border-left:3px solid var(--gold);
+    padding:12px 14px;margin-bottom:10px;
+  }
+  .matchcard .top{display:flex;justify-content:space-between;align-items:baseline;}
+  .matchcard .score{font-size:12px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+  .matchcard .route2{font-family:'Barlow Condensed';font-size:19px;font-weight:700;margin:3px 0;}
+  .matchcard .meta{font-size:12.5px;color:var(--text-muted);}
+  .matchcard .actions{margin-top:9px;display:flex;gap:8px;}
+
+  /* chat */
+  .threadlist{display:flex;flex-direction:column;gap:8px;}
+  .threadrow{background:var(--slate-2);border:1px solid var(--border);padding:10px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+  .threadrow:hover{border-color:var(--orange);}
+  .chatbox{border:1px solid var(--border);background:var(--slate-2);display:flex;flex-direction:column;height:420px;}
+  .chatmsgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;}
+  .msg{max-width:75%;padding:8px 11px;border-radius:6px;font-size:13.5px;line-height:1.35;}
+  .msg.me{align-self:flex-end;background:var(--orange);color:#fff;}
+  .msg.them{align-self:flex-start;background:var(--slate);border:1px solid var(--border);}
+  .msg .meta{display:block;font-size:10px;opacity:0.75;margin-top:3px;}
+  .msg.pending{opacity:0.6;}
+  .chatinput{display:flex;border-top:1px solid var(--border);padding:8px;gap:8px;}
+  .chatinput input{flex:1;}
+
+  /* trips */
+  .trip-steps{display:flex;gap:4px;margin:10px 0;}
+  .trip-steps .step{flex:1;text-align:center;padding:6px 4px;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;background:var(--slate-2);color:var(--text-muted);border-bottom:3px solid var(--border);}
+  .trip-steps .step.done{color:var(--paper);border-bottom-color:var(--green);}
+  .trip-steps .step.current{color:#fff;border-bottom-color:var(--orange);}
+
+  /* borders panel */
+  .borderpost{background:var(--slate-2);border:1px solid var(--border);padding:13px 15px;margin-bottom:10px;}
+  .borderpost h3{font-size:17px;color:var(--paper);}
+  .borderpost .between{color:var(--gold);font-size:12px;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px;}
+  .borderpost ul{margin:8px 0 0;padding-left:18px;font-size:13px;color:var(--text-muted);}
+  .borderpost .wait{display:inline-block;margin-top:6px;font-size:12px;background:var(--slate);padding:3px 8px;border:1px solid var(--border);}
+
+  /* bottom tab bar */
+  nav.tabbar{
+    position:fixed;bottom:0;left:0;right:0;
+    background:var(--slate);border-top:1px solid var(--border);
+    display:flex;z-index:40;max-width:1180px;margin:0 auto;
+  }
+  nav.tabbar button{
+    flex:1;background:transparent;border:none;color:var(--text-muted);
+    padding:10px 4px 8px;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;
+    cursor:pointer;border-top:2px solid transparent;font-weight:600;
+  }
+  nav.tabbar button.active{color:var(--orange);border-top-color:var(--orange);}
+
+  /* toast */
+  #toast{
+    position:fixed;bottom:82px;left:50%;transform:translateX(-50%);
+    background:var(--paper);color:var(--paper-ink);padding:9px 16px;
+    border-radius:3px;font-size:13px;font-weight:600;z-index:100;
+    box-shadow:0 4px 14px rgba(0,0,0,0.4);opacity:0;pointer-events:none;transition:opacity .2s;
+  }
+  #toast.show{opacity:1;}
+
+  /* onboarding modal */
+  .modal-back{position:fixed;inset:0;background:rgba(10,12,16,0.82);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px;}
+  .modal{background:var(--slate);border:1px solid var(--border-light);max-width:440px;width:100%;padding:22px;max-height:90vh;overflow-y:auto;}
+  .modal h2{font-size:24px;margin-bottom:4px;}
+  .modal .hint{color:var(--text-muted);font-size:13px;margin-bottom:16px;}
+
+  .verify-list{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+  .verify-item{display:flex;align-items:center;gap:8px;font-size:13px;background:var(--slate-2);border:1px solid var(--border);padding:8px 10px;}
+  .verify-item input{width:auto;}
+
+  footer.install-bar{
+    display:none;position:fixed;top:52px;left:0;right:0;max-width:1180px;margin:0 auto;
+    background:var(--gold);color:#2b2109;padding:8px 14px;font-size:13px;font-weight:600;
+    align-items:center;justify-content:space-between;z-index:35;
+  }
+  footer.install-bar button{background:#2b2109;color:var(--paper);border:none;padding:6px 12px;font-weight:700;border-radius:2px;cursor:pointer;font-size:12px;}
+
+  @media(min-width:760px){
+    .board-layout{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;align-items:start;}
+    .grid2{grid-template-columns:1fr 1fr 1fr;}
+  }
+  @media(max-width:759px){
+    .ledger-head{display:none;}
+    .row{grid-template-columns:1fr;gap:4px;padding:14px 12px;}
+    .row .price{font-size:16px;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark">BH</div>
+      <div class="name"><b>Border</b>Haul</div>
+    </div>
+    <div class="telltales">
+      <div class="telltale"><span class="dot" id="dotGps"></span><span id="gpsLabel">GPS</span></div>
+      <div class="telltale"><span class="dot" id="dotNet"></span><span id="netLabel">Online</span></div>
+      <div class="telltale"><span class="dot warn" id="dotSync" style="display:none;"></span><span id="syncLabel"></span></div>
+    </div>
+  </header>
+
+  <footer class="install-bar" id="installBar">
+    <span>Install BorderHaul for offline use on the road</span>
+    <button id="installBtn">Install</button>
+  </footer>
+
+  <div class="controlrow">
+    <div class="segmented" id="roleSwitch">
+      <button data-role="shipper">Shipper</button>
+      <button data-role="trucker">Trucker</button>
+    </div>
+    <div class="segmented" id="viewSwitch">
+      <button data-mode="list" class="active">List</button>
+      <button data-mode="map">Map</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" id="postBtn">＋ Post</button>
+  </div>
+
+  <div class="filterbar" id="filterBar">
+    <div>
+      <label>Country</label>
+      <select id="fCountry"><option value="">All countries</option></select>
+    </div>
+    <div>
+      <label>Cargo type</label>
+      <select id="fCargo"><option value="">All cargo</option></select>
+    </div>
+    <div>
+      <label>Truck type</label>
+      <select id="fTruck"><option value="">Any truck</option></select>
+    </div>
+  </div>
+
+  <main>
+
+    <!-- BOARD -->
+    <section class="view active" id="view-board">
+      <div class="board-layout">
+        <div>
+          <div class="ledger" id="ledgerList"></div>
+        </div>
+        <div>
+          <div class="mapwrap" id="mapWrapSide" style="display:none;">
+            <div id="mapMount"></div>
+          </div>
+        </div>
+      </div>
+      <div class="mapwrap" id="mapWrapFull" style="display:none;margin-top:14px;">
+        <div id="mapMountFull"></div>
+      </div>
+    </section>
+
+    <!-- POST -->
+    <section class="view" id="view-post">
+      <div class="panel">
+        <div class="toggle-tabs">
+          <button class="btn ghost active" id="postTabLoad">Post a Load</button>
+          <button class="btn ghost" id="postTabTruck">Post Truck Availability</button>
+        </div>
+
+        <form id="formLoad">
+          <h2>New load</h2>
+          <div class="hint">Visible on the public board immediately. Truckers nearby will be matched by GPS distance.</div>
+          <div class="grid2">
+            <div class="field">
+              <label>Pickup city</label>
+              <select id="loadPickup" required></select>
+            </div>
+            <div class="field">
+              <label>Drop-off city</label>
+              <select id="loadDropoff" required></select>
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label>Cargo type</label>
+              <select id="loadCargo">
+                <option>General freight</option><option>Maize / Grain</option><option>Copper cathode</option>
+                <option>Tobacco</option><option>Cement</option><option>Fuel (tanker)</option>
+                <option>Refrigerated / perishables</option><option>Livestock</option><option>Timber</option>
+                <option>Fertilizer</option><option>Containerised cargo</option><option>Machinery / abnormal load</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Weight (tonnes)</label>
+              <input type="number" id="loadWeight" min="0.5" step="0.5" value="10" required>
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label>Truck type needed</label>
+              <select id="loadTruckType">
+                <option>Flatbed</option><option>Tautliner / curtain-side</option><option>Refrigerated</option>
+                <option>Tanker</option><option>Container / interlink</option><option>Livestock carrier</option>
+                <option>Lowbed / abnormal</option><option>Box/dry van</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Pickup date</label>
+              <input type="date" id="loadDate">
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label>Price offer</label>
+              <input type="number" id="loadPrice" min="0" step="50" placeholder="e.g. 14000">
+            </div>
+            <div class="field">
+              <label>Currency</label>
+              <select id="loadCurrency"></select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Notes (optional)</label>
+            <textarea id="loadNotes" rows="2" placeholder="Loading times, packaging, contact preferences..."></textarea>
+          </div>
+          <button class="btn" type="submit">Post load to board</button>
+        </form>
+
+        <form id="formTruck" style="display:none;">
+          <h2>Truck availability</h2>
+          <div class="hint">Share your current position so shippers near you can find and match with you.</div>
+          <div class="field">
+            <label>Current location</label>
+            <div class="inline-btn-row">
+              <select id="truckCity" style="flex:1;"></select>
+              <button type="button" class="btn ghost small" id="useGpsTruck">Use GPS</button>
+            </div>
+            <div class="geo-status" id="truckGeoStatus">Location not set precisely — using selected city centre.</div>
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label>Operating corridor — from</label>
+              <select id="truckCorridorFrom"></select>
+            </div>
+            <div class="field">
+              <label>Operating corridor — to</label>
+              <select id="truckCorridorTo"></select>
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label>Truck type</label>
+              <select id="truckType">
+                <option>Flatbed</option><option>Tautliner / curtain-side</option><option>Refrigerated</option>
+                <option>Tanker</option><option>Container / interlink</option><option>Livestock carrier</option>
+                <option>Lowbed / abnormal</option><option>Box/dry van</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Capacity (tonnes)</label>
+              <input type="number" id="truckCapacity" min="1" step="1" value="30">
+            </div>
+          </div>
+          <div class="field">
+            <label>Available from</label>
+            <input type="date" id="truckDate">
+          </div>
+          <button class="btn" type="submit">Post availability</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- MATCHES -->
+    <section class="view" id="view-matches">
+      <div class="panel">
+        <h2 id="matchesTitle">Matches</h2>
+        <div class="hint" id="matchesHint">Sorted by distance from your current location, with corridor overlap highlighted.</div>
+        <div id="matchesList"></div>
+      </div>
+    </section>
+
+    <!-- CHAT -->
+    <section class="view" id="view-chat">
+      <div class="panel">
+        <h2>Messages</h2>
+        <div class="hint">Messages queue locally offline and send automatically once you're back online.</div>
+        <div id="chatRoot"></div>
+      </div>
+    </section>
+
+    <!-- TRIPS -->
+    <section class="view" id="view-trips">
+      <div class="panel">
+        <h2>My trips</h2>
+        <div class="hint">Loads and trucks you've posted or matched with, and their current status.</div>
+        <div id="tripsList"></div>
+      </div>
+    </section>
+
+    <!-- BORDERS -->
+    <section class="view" id="view-borders">
+      <div class="panel">
+        <h2>Border post reference</h2>
+        <div class="hint">Static reference info — always available offline. Confirm current requirements with clearing agents before travel.</div>
+        <div id="bordersList"></div>
+      </div>
+    </section>
+
+    <!-- PROFILE -->
+    <section class="view" id="view-profile">
+      <div class="panel">
+        <h2>Profile & verification</h2>
+        <div class="hint">Self-declared for now — badges show shippers/truckers you're a known, contactable party.</div>
+        <div id="profileRoot"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="tabbar" id="tabbar">
+    <button data-view="board" class="active">Board</button>
+    <button data-view="post">Post</button>
+    <button data-view="matches">Matches</button>
+    <button data-view="chat">Chat</button>
+    <button data-view="trips">Trips</button>
+    <button data-view="borders">Borders</button>
+    <button data-view="profile">Profile</button>
+  </nav>
+
+</div>
+
+<div id="toast"></div>
+
+<div class="modal-back" id="onboardBack">
+  <div class="modal">
+    <h2>Welcome to BorderHaul</h2>
+    <div class="hint">Quick setup — this stays on your device and can be edited any time from Profile.</div>
+    <form id="onboardForm">
+      <div class="field">
+        <label>Your name / company</label>
+        <input type="text" id="obName" required placeholder="e.g. Tendai Moyo Transport">
+      </div>
+      <div class="field">
+        <label>I am primarily a...</label>
+        <select id="obRole">
+          <option value="shipper">Shipper — I have goods to move</option>
+          <option value="trucker">Trucker / Fleet owner — I have trucks available</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Base location</label>
+        <select id="obCity" required></select>
+      </div>
+      <div class="field">
+        <label>Preferred currency</label>
+        <select id="obCurrency"></select>
+      </div>
+      <button class="btn" type="submit" style="width:100%;margin-top:6px;">Get started</button>
+    </form>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   BORDERHAUL — offline-first data, matching & UI
+   ========================================================= */
+
+// ---------- reference data ----------
+const CITIES = [
+  {name:"Harare", country:"Zimbabwe", cc:"ZW", lat:-17.8292, lon:31.0522},
+  {name:"Bulawayo", country:"Zimbabwe", cc:"ZW", lat:-20.1500, lon:28.5833},
+  {name:"Mutare", country:"Zimbabwe", cc:"ZW", lat:-18.9707, lon:32.6709},
+  {name:"Johannesburg", country:"South Africa", cc:"ZA", lat:-26.2041, lon:28.0473},
+  {name:"Durban", country:"South Africa", cc:"ZA", lat:-29.8587, lon:31.0218},
+  {name:"Cape Town", country:"South Africa", cc:"ZA", lat:-33.9249, lon:18.4241},
+  {name:"Musina", country:"South Africa", cc:"ZA", lat:-22.3405, lon:30.0448},
+  {name:"Lusaka", country:"Zambia", cc:"ZM", lat:-15.3875, lon:28.3228},
+  {name:"Ndola", country:"Zambia", cc:"ZM", lat:-12.9587, lon:28.6366},
+  {name:"Livingstone", country:"Zambia", cc:"ZM", lat:-17.8419, lon:25.8543},
+  {name:"Windhoek", country:"Namibia", cc:"NA", lat:-22.5609, lon:17.0658},
+  {name:"Walvis Bay", country:"Namibia", cc:"NA", lat:-22.9576, lon:14.5053},
+  {name:"Gaborone", country:"Botswana", cc:"BW", lat:-24.6282, lon:25.9231},
+  {name:"Francistown", country:"Botswana", cc:"BW", lat:-21.1670, lon:27.5084},
+  {name:"Lilongwe", country:"Malawi", cc:"MW", lat:-13.9626, lon:33.7741},
+  {name:"Blantyre", country:"Malawi", cc:"MW", lat:-15.7861, lon:35.0058},
+  {name:"Maputo", country:"Mozambique", cc:"MZ", lat:-25.9692, lon:32.5732},
+  {name:"Beira", country:"Mozambique", cc:"MZ", lat:-19.8317, lon:34.8389},
+  {name:"Dar es Salaam", country:"Tanzania", cc:"TZ", lat:-6.7924, lon:39.2083},
+  {name:"Mbeya", country:"Tanzania", cc:"TZ", lat:-8.9094, lon:33.4608},
+];
+const CURRENCIES = ["USD","ZAR","ZMW","NAD","BWP","MWK","MZN","TZS","ZWL"];
+const BORDER_POSTS = [
+  {name:"Beitbridge", between:"South Africa ⇄ Zimbabwe", wait:"4–24 hrs (peaks Dec/Easter)",
+   docs:["Passport / driver ID","Vehicle registration & COF","Cross-border road carrier permit","Customs bill of entry / T1","COMESA yellow card insurance","Cargo manifest & invoice"]},
+  {name:"Chirundu (one-stop)", between:"Zimbabwe ⇄ Zambia", wait:"2–8 hrs",
+   docs:["Passport","Vehicle registration","Carbon tax / road access fee receipt","Bill of entry (ASYCUDA/ZIMRA)","Third-party insurance","Cargo manifest"]},
+  {name:"Kazungula Bridge", between:"Zambia ⇄ Botswana", wait:"1–4 hrs",
+   docs:["Passport","Vehicle registration","Bridge toll receipt","COMESA/SADC insurance","Customs declaration"]},
+  {name:"Kasumbalesa", between:"Zambia ⇄ DRC (copper corridor)", wait:"6–48 hrs (congestion common)",
+   docs:["Passport","Vehicle registration","Customs bond","Mineral/cargo certificate where applicable","Carrier's licence"]},
+  {name:"Mwami / Mchinji", between:"Zambia ⇄ Malawi", wait:"1–3 hrs",
+   docs:["Passport","Vehicle registration","COMESA insurance","Bill of entry","Cargo manifest"]},
+  {name:"Nakonde / Tunduma", between:"Zambia ⇄ Tanzania", wait:"4–24 hrs",
+   docs:["Passport","Vehicle registration","TANROADS/RAFT permit (Tanzania side)","Customs bond / transit document","Cargo manifest"]},
+  {name:"Ressano Garcia / Lebombo", between:"Mozambique ⇄ South Africa", wait:"2–6 hrs",
+   docs:["Passport","Vehicle registration","Cross-border charge receipt","Bill of entry","Cargo manifest & invoice"]},
+  {name:"Machipanda", between:"Mozambique ⇄ Zimbabwe", wait:"2–10 hrs",
+   docs:["Passport","Vehicle registration","Third-party insurance","Bill of entry","Cargo manifest"]},
+  {name:"Trans-Kalahari (Mamuno/Buitepos)", between:"Botswana ⇄ Namibia", wait:"under 2 hrs, usually quick",
+   docs:["Passport","Vehicle registration","Cross-border charge receipt","Cargo manifest"]},
+];
+
+// ---------- storage helpers ----------
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+};
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function nowISO(){ return new Date().toISOString(); }
+function haversine(lat1,lon1,lat2,lon2){
+  const R=6371, toRad=d=>d*Math.PI/180;
+  const dLat=toRad(lat2-lat1), dLon=toRad(lon2-lon1);
+  const a=Math.sin(dLat/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function cityByName(n){ return CITIES.find(c=>c.name===n); }
+function fmtMoney(n,cur){ if(n==null||n==="") return "Rate on request"; return cur+" "+Number(n).toLocaleString(); }
+function timeAgo(iso){
+  const s=(Date.now()-new Date(iso).getTime())/1000;
+  if(s<60) return "just now";
+  if(s<3600) return Math.floor(s/60)+"m ago";
+  if(s<86400) return Math.floor(s/3600)+"h ago";
+  return Math.floor(s/86400)+"d ago";
+}
+
+// ---------- state ----------
+let profile = LS.get("bh_profile", null);
+let loads = LS.get("bh_loads", null);
+let trucks = LS.get("bh_trucks", null);
+let messages = LS.get("bh_messages", []);
+let currentRole = LS.get("bh_currentRole", "shipper");
+let mapMode = "list";
+let activeThread = null;
+let pinTipEl = null;
+
+function seedIfEmpty(){
+  if(loads === null){
+    const hre=cityByName("Harare"), jhb=cityByName("Johannesburg"), lsk=cityByName("Lusaka"),
+          ndl=cityByName("Ndola"), gbe=cityByName("Gaborone"), mpm=cityByName("Maputo"),
+          bwy=cityByName("Bulawayo"), dar=cityByName("Dar es Salaam");
+    loads = [
+      mkLoad(hre,jhb,"Tobacco",28,"Tautliner / curtain-side",14000,"USD","-2h"),
+      mkLoad(lsk,ndl,"Copper cathode",22,"Flatbed",8500,"ZMW","-40m"),
+      mkLoad(bwy,jhb,"General freight",18,"Box/dry van",11000,"ZAR","-5h"),
+      mkLoad(gbe,mpm,"Containerised cargo",24,"Container / interlink",null,"USD","-1d"),
+      mkLoad(dar,lsk,"Fertilizer",30,"Flatbed",6200,"USD","-3h"),
+    ];
+    LS.set("bh_loads", loads);
+  }
+  if(trucks === null){
+    const hre=cityByName("Harare"), lsk=cityByName("Lusaka"), jhb=cityByName("Johannesburg"),
+          wdh=cityByName("Windhoek"), blz=cityByName("Beira");
+    trucks = [
+      mkTruck(hre,"Zimbabwe","South Africa","Tautliner / curtain-side",30,"-3h"),
+      mkTruck(lsk,"Zambia","Tanzania","Flatbed",26,"-6h"),
+      mkTruck(jhb,"South Africa","Mozambique","Container / interlink",28,"-1h"),
+      mkTruck(wdh,"Namibia","Botswana","Refrigerated",20,"-9h"),
+      mkTruck(blz,"Mozambique","Zimbabwe","Box/dry van",18,"-20h"),
+    ];
+    LS.set("bh_trucks", trucks);
+  }
+}
+function offsetISO(rel){
+  const m = rel.match(/-(\d+)([hmd])/);
+  const n=+m[1], u=m[2];
+  const ms = u==="h"? n*3600000 : u==="m"? n*60000 : n*86400000;
+  return new Date(Date.now()-ms).toISOString();
+}
+function mkLoad(from,to,cargo,weight,truckType,price,cur,age){
+  return {
+    id:uid(), shipperName: "Demo Shipper", pickup:from.name, pickupCountry:from.country, pickupLat:from.lat, pickupLon:from.lon,
+    dropoff:to.name, dropoffCountry:to.country, dropoffLat:to.lat, dropoffLon:to.lon,
+    cargoType:cargo, weight, truckTypeNeeded:truckType, price, currency:cur, pickupDate:"",
+    notes:"", status:"posted", statusLog:[{status:"posted", ts:offsetISO(age)}],
+    postedAt:offsetISO(age), pendingSync:false
+  };
+}
+function mkTruck(loc,from,to,truckType,capacity,age){
+  return {
+    id:uid(), truckerName:"Demo Trucker", city:loc.name, country:loc.country, lat:loc.lat, lon:loc.lon,
+    corridorFrom:from, corridorTo:to, truckType, capacity, availableFrom:"",
+    postedAt:offsetISO(age), pendingSync:false
+  };
+}
+seedIfEmpty();
+
+function saveAll(){
+  LS.set("bh_loads", loads); LS.set("bh_trucks", trucks); LS.set("bh_messages", messages);
+  LS.set("bh_currentRole", currentRole);
+}
+
+// ---------- toast ----------
+let toastTimer;
+function toast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove("show"), 2600);
+}
+
+// ---------- populate static selects ----------
+function fillCitySelect(sel, includeBlank){
+  sel.innerHTML = (includeBlank? '<option value="">Select city</option>' : "") +
+    CITIES.map(c=>`<option value="${c.name}">${c.name}, ${c.cc}</option>`).join("");
+}
+function fillCountrySelect(sel){
+  const countries=[...new Set(CITIES.map(c=>c.country))].sort();
+  sel.innerHTML = '<option value="">All countries</option>'+countries.map(c=>`<option>${c}</option>`).join("");
+}
+function fillCurrencySelect(sel, def){
+  sel.innerHTML = CURRENCIES.map(c=>`<option ${c===def?"selected":""}>${c}</option>`).join("");
+}
+function fillCargoFilter(sel){
+  const cargoes=[...new Set(loads.map(l=>l.cargoType))];
+  sel.innerHTML = '<option value="">All cargo</option>'+cargoes.map(c=>`<option>${c}</option>`).join("");
+}
+function fillTruckFilter(sel){
+  const types=["Flatbed","Tautliner / curtain-side","Refrigerated","Tanker","Container / interlink","Livestock carrier","Lowbed / abnormal","Box/dry van"];
+  sel.innerHTML = '<option value="">Any truck</option>'+types.map(t=>`<option>${t}</option>`).join("");
+}
+
+fillCountrySelect(document.getElementById("fCountry"));
+fillCargoFilter(document.getElementById("fCargo"));
+fillTruckFilter(document.getElementById("fTruck"));
+fillCitySelect(document.getElementById("loadPickup"));
+fillCitySelect(document.getElementById("loadDropoff"));
+fillCitySelect(document.getElementById("truckCity"));
+fillCitySelect(document.getElementById("truckCorridorFrom"));
+fillCitySelect(document.getElementById("truckCorridorTo"));
+fillCurrencySelect(document.getElementById("loadCurrency"), "USD");
+fillCitySelect(document.getElementById("obCity"));
+fillCurrencySelect(document.getElementById("obCurrency"), "USD");
+
+// ---------- onboarding ----------
+if(!profile){
+  document.getElementById("onboardBack").style.display="flex";
+} 
+document.getElementById("onboardForm").addEventListener("submit", e=>{
+  e.preventDefault();
+  const cityName = document.getElementById("obCity").value;
+  const city = cityByName(cityName);
+  profile = {
+    name: document.getElementById("obName").value.trim() || "Unnamed",
+    role: document.getElementById("obRole").value,
+    city: cityName, country: city.country, lat: city.lat, lon: city.lon,
+    gpsAccurate: false,
+    currency: document.getElementById("obCurrency").value,
+    verification: {id:false, license:false, vehicle:false}
+  };
+  currentRole = profile.role;
+  LS.set("bh_profile", profile);
+  LS.set("bh_currentRole", currentRole);
+  document.getElementById("onboardBack").style.display="none";
+  applyRoleUI();
+  renderAll();
+  toast("Welcome, "+profile.name.split(" ")[0]+" — you're set up.");
+});
+
+// ---------- GPS / connectivity telltales ----------
+function setGpsTelltale(state){
+  const dot=document.getElementById("dotGps"), label=document.getElementById("gpsLabel");
+  dot.classList.remove("on","warn");
+  if(state==="locked"){ dot.classList.add("on"); label.textContent="GPS locked"; }
+  else if(state==="manual"){ dot.classList.add("warn"); label.textContent="GPS approx."; }
+  else { label.textContent="GPS off"; }
+}
+function updateNetTelltale(){
+  const dot=document.getElementById("dotNet"), label=document.getElementById("netLabel");
+  if(navigator.onLine){ dot.classList.add("on"); label.textContent="Online"; }
+  else { dot.classList.remove("on"); label.textContent="Offline"; }
+}
+function pendingCount(){
+  return loads.filter(l=>l.pendingSync).length + trucks.filter(t=>t.pendingSync).length + messages.filter(m=>m.pendingSync).length;
+}
+function updateSyncTelltale(){
+  const n=pendingCount(); const dot=document.getElementById("dotSync"), label=document.getElementById("syncLabel");
+  if(n>0){ dot.style.display="inline-block"; label.textContent=n+" pending sync"; }
+  else { dot.style.display="none"; label.textContent=""; }
+}
+window.addEventListener("online", ()=>{
+  updateNetTelltale();
+  const n=pendingCount();
+  if(n>0){
+    loads.forEach(l=>l.pendingSync=false);
+    trucks.forEach(t=>t.pendingSync=false);
+    messages.forEach(m=>m.pendingSync=false);
+    saveAll(); updateSyncTelltale(); renderAll();
+    toast("Back online — synced "+n+" item"+(n>1?"s":"")+".");
+  }
+});
+window.addEventListener("offline", ()=>{ updateNetTelltale(); toast("You're offline — new posts & messages will queue and sync later."); });
+updateNetTelltale();
+setGpsTelltale("off");
+
+function requestGps(cb){
+  if(!navigator.geolocation){ setGpsTelltale("off"); toast("GPS not available on this device — pick your city manually."); return; }
+  navigator.geolocation.getCurrentPosition(
+    pos=>{ setGpsTelltale("locked"); cb(pos.coords.latitude, pos.coords.longitude); },
+    err=>{ setGpsTelltale("manual"); toast("Couldn't get GPS — using your selected city instead."); },
+    {enableHighAccuracy:true, timeout:8000}
+  );
+}
+
+// ---------- view / tab switching ----------
+function switchView(v){
+  document.querySelectorAll(".view").forEach(el=>el.classList.remove("active"));
+  document.getElementById("view-"+v).classList.add("active");
+  document.querySelectorAll("#tabbar button").forEach(b=>b.classList.toggle("active", b.dataset.view===v));
+  document.getElementById("filterBar").style.display = (v==="board") ? "flex" : "none";
+  if(v==="board") renderBoard();
+  if(v==="matches") renderMatches();
+  if(v==="chat") renderChatList();
+  if(v==="trips") renderTrips();
+  if(v==="borders") renderBorders();
+  if(v==="profile") renderProfile();
+}
+document.getElementById("tabbar").addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  switchView(b.dataset.view);
+});
+document.getElementById("postBtn").addEventListener("click", ()=>switchView("post"));
+
+// ---------- role switch ----------
+function applyRoleUI(){
+  document.querySelectorAll("#roleSwitch button").forEach(b=>b.classList.toggle("active", b.dataset.role===currentRole));
+  document.getElementById("postTabLoad").style.display = currentRole==="shipper" ? "inline-block" : "none";
+  document.getElementById("postTabTruck").style.display = currentRole==="trucker" ? "inline-block" : "none";
+  document.getElementById("formLoad").style.display = currentRole==="shipper" ? "block" : "none";
+  document.getElementById("formTruck").style.display = currentRole==="trucker" ? "block" : "none";
+  document.getElementById("postTabLoad").classList.add("active");
+  document.getElementById("postTabTruck").classList.remove("active");
+}
+document.getElementById("roleSwitch").addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  currentRole = b.dataset.role; saveAll(); applyRoleUI(); renderMatches();
+});
+document.getElementById("postTabLoad").addEventListener("click", ()=>{
+  document.getElementById("formLoad").style.display="block";
+  document.getElementById("formTruck").style.display="none";
+  document.getElementById("postTabLoad").classList.add("active");
+  document.getElementById("postTabTruck").classList.remove("active");
+});
+document.getElementById("postTabTruck").addEventListener("click", ()=>{
+  document.getElementById("formLoad").style.display="none";
+  document.getElementById("formTruck").style.display="block";
+  document.getElementById("postTabTruck").classList.add("active");
+  document.getElementById("postTabLoad").classList.remove("active");
+});
+
+// ---------- view switch (list/map) ----------
+document.getElementById("viewSwitch").addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  mapMode=b.dataset.mode;
+  document.querySelectorAll("#viewSwitch button").forEach(x=>x.classList.toggle("active", x===b));
+  renderBoard();
+});
+
+// ---------- filters ----------
+["fCountry","fCargo","fTruck"].forEach(id=>document.getElementById(id).addEventListener("change", renderBoard));
+
+// ---------- BOARD RENDER ----------
+function filteredLoads(){
+  const country=document.getElementById("fCountry").value;
+  const cargo=document.getElementById("fCargo").value;
+  const truck=document.getElementById("fTruck").value;
+  return loads.filter(l=>{
+    if(country && l.pickupCountry!==country && l.dropoffCountry!==country) return false;
+    if(cargo && l.cargoType!==cargo) return false;
+    if(truck && l.truckTypeNeeded!==truck) return false;
+    return true;
+  }).sort((a,b)=> new Date(b.postedAt)-new Date(a.postedAt));
+}
+function badgeFor(status){
+  const map={posted:"posted",matched:"matched","in transit":"transit",delivered:"delivered"};
+  return `<span class="badge ${map[status]||'posted'}">${status}</span>`;
+}
+function renderBoard(){
+  const list=filteredLoads();
+  const wrap=document.getElementById("ledgerList");
+  const originLat = profile? profile.lat : null, originLon = profile? profile.lon : null;
+  if(list.length===0){
+    wrap.innerHTML='<div class="empty">No loads match these filters yet. Try widening the search, or post the first load for this corridor.</div>';
+  } else {
+    wrap.innerHTML =
+      `<div class="ledger-head"><div>Route</div><div>Cargo</div><div>Price</div><div>Posted</div><div>Distance</div></div>` +
+      list.map(l=>{
+        const dist = originLat!=null ? haversine(originLat,originLon,l.pickupLat,l.pickupLon) : null;
+        return `<div class="row" data-id="${l.id}">
+          <div class="route">${l.pickup} → ${l.dropoff}<small>${l.pickupCountry} → ${l.dropoffCountry}</small></div>
+          <div class="cargo"><span class="type">${l.cargoType}</span><br><span class="sub">${l.weight}t · ${l.truckTypeNeeded}</span></div>
+          <div class="price">${fmtMoney(l.price,l.currency)}</div>
+          <div>${badgeFor(l.status)}<br><span class="sub" style="color:#7b7660;font-size:11.5px;">${timeAgo(l.postedAt)}</span></div>
+          <div class="dist">${dist!=null? Math.round(dist)+" km" : "—"}<small>from you</small></div>
+        </div>`;
+      }).join("");
+  }
+  wrap.querySelectorAll(".row").forEach(r=>r.addEventListener("click", ()=>openLoadDetail(r.dataset.id)));
+
+  document.getElementById("mapWrapSide").style.display = mapMode==="map" ? "block" : "none";
+  document.getElementById("mapWrapFull").style.display = "none";
+  if(mapMode==="map"){
+    document.getElementById("mapMount").innerHTML = buildMapSVG(list, trucks, profile, "board");
+    attachPinEvents(document.getElementById("mapMount"));
+  }
+}
+function openLoadDetail(id){
+  const l = loads.find(x=>x.id===id);
+  if(!l) return;
+  toast(l.pickup+" → "+l.dropoff+" · "+l.cargoType+" · "+fmtMoney(l.price,l.currency));
+}
+
+// ---------- MAP (custom offline SVG — no external tiles) ----------
+// Bounding box roughly covers the 8-country region.
+const MAP_BOUNDS = {minLat:-35, maxLat:-1, minLon:11, maxLon:40};
+function project(lat, lon, W, H){
+  const x = (lon - MAP_BOUNDS.minLon) / (MAP_BOUNDS.maxLon - MAP_BOUNDS.minLon) * W;
+  const y = (MAP_BOUNDS.maxLat - lat) / (MAP_BOUNDS.maxLat - MAP_BOUNDS.minLat) * H;
+  return [x,y];
+}
+function buildMapSVG(loadItems, truckItems, me, mode){
+  const W=560,H=560;
+  let pins="";
+  // country reference labels (rough centroids) — orientation aid, not a precise basemap
+  const REGION_LABELS = [
+    {n:"ZAMBIA",lat:-13.5,lon:27.8},{n:"ZIMBABWE",lat:-19.0,lon:29.8},{n:"SOUTH AFRICA",lat:-29.5,lon:24.5},
+    {n:"NAMIBIA",lat:-22.0,lon:17.5},{n:"BOTSWANA",lat:-22.5,lon:24.0},{n:"MALAWI",lat:-13.5,lon:34.0},
+    {n:"MOZAMBIQUE",lat:-18.5,lon:35.0},{n:"TANZANIA",lat:-7.0,lon:35.5},
+  ];
+  let labels = REGION_LABELS.map(r=>{
+    const [x,y]=project(r.lat,r.lon,W,H);
+    return `<text x="${x}" y="${y}" class="maplabel" text-anchor="middle">${r.n}</text>`;
+  }).join("");
+
+  loadItems.forEach(l=>{
+    const [x,y]=project(l.pickupLat,l.pickupLon,W,H);
+    pins += `<g class="pin" data-tip="${l.pickup} → ${l.dropoff} · ${l.cargoType}" transform="translate(${x},${y})">
+      <circle r="5.5" fill="#E1571F" stroke="#12161F" stroke-width="1.2"/></g>`;
+  });
+  if(mode!=="matches-truck"){
+    truckItems.forEach(t=>{
+      const [x,y]=project(t.lat,t.lon,W,H);
+      pins += `<g class="pin" data-tip="${t.truckerName} — ${t.truckType} available in ${t.city}" transform="translate(${x},${y})">
+        <rect x="-5" y="-5" width="10" height="10" fill="#C9962E" stroke="#12161F" stroke-width="1.2"/></g>`;
+    });
+  }
+  let mePin="";
+  if(me){
+    const [x,y]=project(me.lat,me.lon,W,H);
+    mePin = `<g><circle cx="${x}" cy="${y}" r="10" fill="none" stroke="#3F8F5F" stroke-width="2"><animate attributeName="r" values="8;14;8" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.9;0.1;0.9" dur="2.4s" repeatCount="indefinite"/></circle>
+      <circle cx="${x}" cy="${y}" r="5" fill="#3F8F5F" stroke="#12161F" stroke-width="1.2"/></g>`;
+  }
+  return `<svg class="mapsvg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${W}" height="${H}" fill="#1B2129"/>
+    <g opacity="0.5">${labels}</g>
+    ${pins}
+    ${mePin}
+  </svg>
+  <div style="display:flex;gap:14px;padding:8px 10px;font-size:11px;color:var(--text-muted);border-top:1px solid var(--border);flex-wrap:wrap;">
+    <span>● orange = load pickup</span><span>■ gold = truck available</span><span>◎ green = you</span>
+  </div>`;
+}
+function attachPinEvents(root){
+  root.querySelectorAll(".pin").forEach(p=>{
+    p.addEventListener("mouseenter", e=>{
+      const tip=p.getAttribute("data-tip");
+      pinTipEl=document.createElement("div"); pinTipEl.className="pin-tip"; pinTipEl.textContent=tip;
+      document.body.appendChild(pinTipEl);
+      const r=p.getBoundingClientRect();
+      pinTipEl.style.left=(r.left+r.width/2)+"px"; pinTipEl.style.top=r.top+"px";
+    });
+    p.addEventListener("mouseleave", ()=>{ if(pinTipEl){pinTipEl.remove(); pinTipEl=null;} });
+    p.addEventListener("click", ()=> toast(p.getAttribute("data-tip")));
+  });
+}
+
+// ---------- POST forms ----------
+document.getElementById("formLoad").addEventListener("submit", e=>{
+  e.preventDefault();
+  const pickup=cityByName(document.getElementById("loadPickup").value);
+  const dropoff=cityByName(document.getElementById("loadDropoff").value);
+  if(!pickup || !dropoff){ toast("Choose both a pickup and drop-off city."); return; }
+  const l = {
+    id:uid(), shipperName: profile? profile.name : "You",
+    pickup:pickup.name, pickupCountry:pickup.country, pickupLat:pickup.lat, pickupLon:pickup.lon,
+    dropoff:dropoff.name, dropoffCountry:dropoff.country, dropoffLat:dropoff.lat, dropoffLon:dropoff.lon,
+    cargoType:document.getElementById("loadCargo").value,
+    weight:+document.getElementById("loadWeight").value,
+    truckTypeNeeded:document.getElementById("loadTruckType").value,
+    pickupDate:document.getElementById("loadDate").value,
+    price:document.getElementById("loadPrice").value || null,
+    currency:document.getElementById("loadCurrency").value,
+    notes:document.getElementById("loadNotes").value,
+    status:"posted", statusLog:[{status:"posted", ts:nowISO()}],
+    postedAt:nowISO(), pendingSync: !navigator.onLine
+  };
+  loads.unshift(l); saveAll(); updateSyncTelltale();
+  e.target.reset(); document.getElementById("loadCurrency").value = profile? profile.currency : "USD";
+  toast(navigator.onLine? "Load posted to the public board." : "Offline — load saved, will sync when back online.");
+  switchView("board");
+});
+
+document.getElementById("useGpsTruck").addEventListener("click", ()=>{
+  requestGps((lat,lon)=>{
+    document.getElementById("truckGeoStatus").textContent = "Using live GPS position ("+lat.toFixed(3)+", "+lon.toFixed(3)+").";
+    document.getElementById("truckCity").dataset.gpsLat=lat;
+    document.getElementById("truckCity").dataset.gpsLon=lon;
+    toast("GPS position captured.");
+  });
+});
+document.getElementById("formTruck").addEventListener("submit", e=>{
+  e.preventDefault();
+  const citySel=document.getElementById("truckCity");
+  const city=cityByName(citySel.value) || (profile? {name:profile.city,country:profile.country,lat:profile.lat,lon:profile.lon} : CITIES[0]);
+  const gLat=citySel.dataset.gpsLat, gLon=citySel.dataset.gpsLon;
+  const t = {
+    id:uid(), truckerName: profile? profile.name : "You",
+    city: city.name, country: city.country,
+    lat: gLat? +gLat : city.lat, lon: gLon? +gLon : city.lon,
+    corridorFrom: document.getElementById("truckCorridorFrom").value || city.country,
+    corridorTo: document.getElementById("truckCorridorTo").value || "",
+    truckType: document.getElementById("truckType").value,
+    capacity: +document.getElementById("truckCapacity").value,
+    availableFrom: document.getElementById("truckDate").value,
+    postedAt: nowISO(), pendingSync: !navigator.onLine
+  };
+  trucks.unshift(t); saveAll(); updateSyncTelltale();
+  e.target.reset();
+  toast(navigator.onLine? "Truck availability posted." : "Offline — saved, will sync when back online.");
+  switchView("matches");
+});
+
+// ---------- MATCHING ENGINE ----------
+function scoreLoadForTrucker(load, trucker){
+  const dist = haversine(trucker.lat, trucker.lon, load.pickupLat, load.pickupLon);
+  const corridorHit = (load.pickupCountry===trucker.corridorFrom || load.pickupCountry===trucker.corridorTo ||
+                        load.dropoffCountry===trucker.corridorFrom || load.dropoffCountry===trucker.corridorTo);
+  const truckTypeHit = load.truckTypeNeeded===trucker.truckType;
+  let score = 0;
+  score += Math.max(0, 100 - dist/8);       // closer = higher
+  if(corridorHit) score += 40;
+  if(truckTypeHit) score += 25;
+  return {dist, corridorHit, truckTypeHit, score};
+}
+function renderMatches(){
+  const title=document.getElementById("matchesTitle"), hint=document.getElementById("matchesHint"), root=document.getElementById("matchesList");
+  if(!profile){ root.innerHTML='<div class="empty">Complete your profile first to see matches.</div>'; return; }
+
+  if(currentRole==="trucker"){
+    title.textContent="Loads near you";
+    hint.textContent="Sorted by distance from your last known position, with corridor & truck-type overlap noted.";
+    const me = {lat:profile.lat, lon:profile.lon, corridorFrom:profile.country, corridorTo:profile.country, truckType:""};
+    // if the user has posted truck availability, use the most recent one for corridor/type context
+    const myTruck = trucks.find(t=>t.truckerName===profile.name) || null;
+    const ref = myTruck || me;
+    const scored = loads.filter(l=>l.status==="posted").map(l=>({l, ...scoreLoadForTrucker(l, ref)}))
+      .sort((a,b)=>b.score-a.score);
+    if(scored.length===0){ root.innerHTML='<div class="empty">No open loads right now — check back soon.</div>'; return; }
+    root.innerHTML = scored.map(({l,dist,corridorHit,truckTypeHit})=>`
+      <div class="matchcard" data-id="${l.id}" data-kind="load">
+        <div class="top"><span class="score">${corridorHit? "On your corridor":"Nearby"}${truckTypeHit? " · truck match":""}</span><span>${Math.round(dist)} km away</span></div>
+        <div class="route2">${l.pickup} → ${l.dropoff}</div>
+        <div class="meta">${l.cargoType} · ${l.weight}t · ${l.truckTypeNeeded} · ${fmtMoney(l.price,l.currency)}</div>
+        <div class="actions">
+          <button class="btn small" data-act="accept">Accept match</button>
+          <button class="btn ghost small" data-act="chat">Message shipper</button>
+        </div>
+      </div>`).join("");
+  } else {
+    title.textContent="Trucks near your loads";
+    hint.textContent="For each open load you've posted, nearby available trucks sorted by distance.";
+    const myLoads = loads.filter(l=>l.shipperName===profile.name && l.status==="posted");
+    if(myLoads.length===0){ root.innerHTML='<div class="empty">Post a load to see matching trucks nearby.</div>'; return; }
+    root.innerHTML = myLoads.map(l=>{
+      const scored = trucks.map(t=>({t, ...scoreLoadForTrucker(l, t)})).sort((a,b)=>b.score-a.score).slice(0,6);
+      return `<div style="margin-bottom:18px;">
+        <div class="disp" style="font-size:16px;color:var(--gold);margin-bottom:6px;">${l.pickup} → ${l.dropoff} (${l.cargoType})</div>
+        ${scored.map(({t,dist,corridorHit,truckTypeHit})=>`
+          <div class="matchcard" data-id="${t.id}" data-kind="truck" data-load="${l.id}">
+            <div class="top"><span class="score">${corridorHit? "On corridor":"Nearby"}${truckTypeHit? " · type match":""}</span><span>${Math.round(dist)} km from pickup</span></div>
+            <div class="route2">${t.truckerName} — ${t.truckType}</div>
+            <div class="meta">Based in ${t.city}, ${t.country} · corridor ${t.corridorFrom} → ${t.corridorTo} · ${t.capacity}t capacity</div>
+            <div class="actions">
+              <button class="btn small" data-act="accept">Accept match</button>
+              <button class="btn ghost small" data-act="chat">Message trucker</button>
+            </div>
+          </div>`).join("")}
+      </div>`;
+    }).join("");
+  }
+
+  root.querySelectorAll(".matchcard").forEach(card=>{
+    card.querySelectorAll("button").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const kind=card.dataset.kind, act=btn.dataset.act;
+        const loadId = kind==="load" ? card.dataset.id : card.dataset.load;
+        const threadKey = loadId + "_" + (kind==="truck"? card.dataset.id : "self");
+        if(act==="accept"){
+          const l=loads.find(x=>x.id===loadId);
+          if(l && l.status==="posted"){
+            l.status="matched"; l.statusLog.push({status:"matched", ts:nowISO()});
+            saveAll(); renderMatches();
+            toast("Match accepted — status moved to Matched. Track it under Trips.");
+          }
+        } else if(act==="chat"){
+          activeThread = threadKey;
+          switchView("chat"); openThread(threadKey, loadId);
+        }
+      });
+    });
+  });
+}
+
+// ---------- CHAT ----------
+function threadsForProfile(){
+  const keys = [...new Set(messages.map(m=>m.threadId))];
+  const matchedLoads = loads.filter(l=>l.status!=="posted");
+  matchedLoads.forEach(l=>{
+    const auto = l.id+"_self";
+    if(!keys.includes(auto)) keys.push(auto);
+  });
+  return keys;
+}
+function renderChatList(){
+  const root=document.getElementById("chatRoot");
+  const keys = threadsForProfile();
+  if(keys.length===0){ root.innerHTML='<div class="empty">No conversations yet. Accept a match to start one.</div>'; return; }
+  root.innerHTML = `<div class="threadlist" id="threadListInner"></div><div id="threadOpen" style="margin-top:14px;"></div>`;
+  const list=document.getElementById("threadListInner");
+  list.innerHTML = keys.map(k=>{
+    const loadId=k.split("_")[0];
+    const l=loads.find(x=>x.id===loadId);
+    const last = messages.filter(m=>m.threadId===k).slice(-1)[0];
+    return `<div class="threadrow" data-key="${k}" data-load="${loadId}">
+      <div><strong>${l? l.pickup+" → "+l.dropoff : "Conversation"}</strong><br><span style="font-size:12px;color:var(--text-muted);">${last? last.text.slice(0,40) : "No messages yet"}</span></div>
+      <span style="font-size:11px;color:var(--text-muted);">${last? timeAgo(last.ts):""}</span>
+    </div>`;
+  }).join("");
+  list.querySelectorAll(".threadrow").forEach(r=>r.addEventListener("click", ()=>openThread(r.dataset.key, r.dataset.load)));
+  if(activeThread) openThread(activeThread, activeThread.split("_")[0]);
+}
+function openThread(threadId, loadId){
+  activeThread = threadId;
+  const mount = document.getElementById("threadOpen") || document.getElementById("chatRoot");
+  const l = loads.find(x=>x.id===loadId);
+  const msgs = messages.filter(m=>m.threadId===threadId);
+  mount.innerHTML = `
+    <div class="chatbox">
+      <div style="padding:8px 12px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-muted);">
+        ${l? l.pickup+" → "+l.dropoff+" · "+l.cargoType : "Conversation"}
+      </div>
+      <div class="chatmsgs" id="chatMsgs">
+        ${msgs.length? msgs.map(m=>`<div class="msg ${m.mine?'me':'them'} ${m.pendingSync?'pending':''}">${m.text}<span class="meta">${m.mine?'You':'Them'} · ${timeAgo(m.ts)}${m.pendingSync?' · queued':''}</span></div>`).join("")
+          : '<div class="empty" style="padding:14px;">Say hello to get things moving.</div>'}
+      </div>
+      <div class="chatinput">
+        <input type="text" id="chatInput" placeholder="Type a message...">
+        <button class="btn small" id="chatSend">Send</button>
+      </div>
+    </div>`;
+  const box=document.getElementById("chatMsgs"); box.scrollTop=box.scrollHeight;
+  document.getElementById("chatSend").addEventListener("click", ()=>sendMsg(threadId));
+  document.getElementById("chatInput").addEventListener("keydown", e=>{ if(e.key==="Enter") sendMsg(threadId); });
+}
+function sendMsg(threadId){
+  const input=document.getElementById("chatInput");
+  const text=input.value.trim(); if(!text) return;
+  messages.push({id:uid(), threadId, text, mine:true, ts:nowISO(), pendingSync: !navigator.onLine});
+  saveAll(); updateSyncTelltale(); input.value="";
+  openThread(threadId, threadId.split("_")[0]);
+  renderChatList_softRefresh();
+}
+function renderChatList_softRefresh(){
+  // refresh just the left list without collapsing the open thread
+  const keys = threadsForProfile();
+  const list=document.getElementById("threadListInner");
+  if(!list) return;
+  list.innerHTML = keys.map(k=>{
+    const loadId=k.split("_")[0]; const l=loads.find(x=>x.id===loadId);
+    const last = messages.filter(m=>m.threadId===k).slice(-1)[0];
+    return `<div class="threadrow" data-key="${k}" data-load="${loadId}">
+      <div><strong>${l? l.pickup+" → "+l.dropoff : "Conversation"}</strong><br><span style="font-size:12px;color:var(--text-muted);">${last? last.text.slice(0,40) : "No messages yet"}</span></div>
+      <span style="font-size:11px;color:var(--text-muted);">${last? timeAgo(last.ts):""}</span>
+    </div>`;
+  }).join("");
+  list.querySelectorAll(".threadrow").forEach(r=>r.addEventListener("click", ()=>openThread(r.dataset.key, r.dataset.load)));
+}
+
+// ---------- TRIPS ----------
+const STATUS_STEPS=["posted","matched","in transit","delivered"];
+function renderTrips(){
+  const root=document.getElementById("tripsList");
+  const mine = loads.filter(l=> !profile || l.shipperName===profile.name || l.status!=="posted");
+  if(mine.length===0){ root.innerHTML='<div class="empty">No trips yet.</div>'; return; }
+  root.innerHTML = mine.map(l=>{
+    const idx = STATUS_STEPS.indexOf(l.status);
+    const canAdvance = idx>=0 && idx<STATUS_STEPS.length-1;
+    return `<div class="panel" style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;">
+        <div class="disp" style="font-size:17px;">${l.pickup} → ${l.dropoff}</div>
+        ${badgeFor(l.status)}
+      </div>
+      <div class="meta" style="font-size:12.5px;color:var(--text-muted);margin-top:2px;">${l.cargoType} · ${l.weight}t · ${fmtMoney(l.price,l.currency)}</div>
+      <div class="trip-steps">
+        ${STATUS_STEPS.map((s,i)=>`<div class="step ${i<idx?'done':''} ${i===idx?'current':''}">${s}</div>`).join("")}
+      </div>
+      ${canAdvance? `<button class="btn small" data-id="${l.id}" data-act="advance">Mark as "${STATUS_STEPS[idx+1]}"</button>` : ""}
+    </div>`;
+  }).join("");
+  root.querySelectorAll('[data-act="advance"]').forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const l=loads.find(x=>x.id===btn.dataset.id);
+      const idx=STATUS_STEPS.indexOf(l.status);
+      l.status=STATUS_STEPS[idx+1];
+      l.statusLog.push({status:l.status, ts:nowISO()});
+      saveAll(); renderTrips();
+      toast("Status updated: "+l.status);
+    });
+  });
+}
+
+// ---------- BORDERS ----------
+function renderBorders(){
+  document.getElementById("bordersList").innerHTML = BORDER_POSTS.map(b=>`
+    <div class="borderpost">
+      <h3>${b.name}</h3>
+      <div class="between">${b.between}</div>
+      <ul>${b.docs.map(d=>`<li>${d}</li>`).join("")}</ul>
+      <span class="wait">Typical wait: ${b.wait}</span>
+    </div>`).join("");
+}
+
+// ---------- PROFILE ----------
+function renderProfile(){
+  const root=document.getElementById("profileRoot");
+  if(!profile){ root.innerHTML='<div class="empty">No profile yet.</div>'; return; }
+  root.innerHTML = `
+    <div class="field"><label>Name / company</label><input type="text" id="pfName" value="${profile.name}"></div>
+    <div class="grid2">
+      <div class="field"><label>Base city</label><select id="pfCity"></select></div>
+      <div class="field"><label>Currency</label><select id="pfCurrency"></select></div>
+    </div>
+    <div class="inline-btn-row" style="margin-bottom:14px;">
+      <button class="btn ghost small" id="pfGps">Refresh GPS location</button>
+      <span class="geo-status" id="pfGeoStatus">Base: ${profile.city}, ${profile.country}</span>
+    </div>
+    <label>Verification (self-declared)</label>
+    <div class="verify-list">
+      <label class="verify-item"><input type="checkbox" id="vId" ${profile.verification.id?"checked":""}> Government ID / passport on file</label>
+      <label class="verify-item"><input type="checkbox" id="vLicense" ${profile.verification.license?"checked":""}> Driver's licence / operator licence on file</label>
+      <label class="verify-item"><input type="checkbox" id="vVehicle" ${profile.verification.vehicle?"checked":""}> Vehicle registration & insurance on file</label>
+    </div>
+    <button class="btn" id="pfSave" style="margin-top:16px;">Save profile</button>
+  `;
+  fillCitySelect(document.getElementById("pfCity"));
+  document.getElementById("pfCity").value=profile.city;
+  fillCurrencySelect(document.getElementById("pfCurrency"), profile.currency);
+  document.getElementById("pfGps").addEventListener("click", ()=>{
+    requestGps((lat,lon)=>{
+      profile.lat=lat; profile.lon=lon; profile.gpsAccurate=true;
+      LS.set("bh_profile", profile);
+      document.getElementById("pfGeoStatus").textContent="Live GPS: "+lat.toFixed(3)+", "+lon.toFixed(3);
+      toast("Location refreshed.");
+    });
+  });
+  document.getElementById("pfSave").addEventListener("click", ()=>{
+    const cityName=document.getElementById("pfCity").value;
+    const city=cityByName(cityName);
+    profile.name=document.getElementById("pfName").value.trim()||profile.name;
+    profile.city=city.name; profile.country=city.country;
+    if(!profile.gpsAccurate){ profile.lat=city.lat; profile.lon=city.lon; }
+    profile.currency=document.getElementById("pfCurrency").value;
+    profile.verification={id:document.getElementById("vId").checked, license:document.getElementById("vLicense").checked, vehicle:document.getElementById("vVehicle").checked};
+    LS.set("bh_profile", profile);
+    toast("Profile saved.");
+    renderBoard();
+  });
+}
+
+// ---------- render everything ----------
+function renderAll(){
+  fillCargoFilter(document.getElementById("fCargo"));
+  renderBoard();
+  updateSyncTelltale();
+  if(profile){
+    document.getElementById("loadCurrency").value = profile.currency;
+    if(profile.gpsAccurate) setGpsTelltale("locked"); else setGpsTelltale("manual");
+  }
+}
+if(profile){ currentRole = LS.get("bh_currentRole", profile.role); applyRoleUI(); }
+renderAll();
+switchView("board");
+
+// ---------- service worker + install prompt ----------
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{ /* offline-first: fails silently on file:// or first offline load */ });
+  });
+}
+let deferredInstall=null;
+window.addEventListener("beforeinstallprompt", e=>{
+  e.preventDefault(); deferredInstall=e;
+  document.getElementById("installBar").style.display="flex";
+});
+document.getElementById("installBtn").addEventListener("click", async ()=>{
+  document.getElementById("installBar").style.display="none";
+  if(deferredInstall){ deferredInstall.prompt(); await deferredInstall.userChoice; deferredInstall=null; }
+});
+window.addEventListener("appinstalled", ()=>{ toast("BorderHaul installed."); document.getElementById("installBar").style.display="none"; });
+</script>
+</body>
+</html>
