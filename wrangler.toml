@@ -4,11 +4,4 @@ compatibility_date = "2026-09-08"
 
 
 
-# Serves everything in ./public as static assets (index.html, manifest.json,
-# sw.js, icon.svg). "single-page-application" fallback means ANY request that
-# doesn't match a real file (including the installed PWA's navigation request)
-# resolves to index.html instead of erroring — this is what fixes ERR_FAILED.
-[assets]
-directory = "./public"
-binding = "ASSETS"
-not_found_handling = "single-page-application"
+
