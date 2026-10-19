@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>BorderHaul — Southern Africa Freight Board</title>
 <meta name="description" content="Offline-first load board matching truckers and shippers across Southern Africa by GPS location and corridor.">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#12161F">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1264,7 +1264,9 @@ switchView("board");
 // ---------- service worker + install prompt ----------
 if("serviceWorker" in navigator){
   window.addEventListener("load", ()=>{
-    navigator.serviceWorker.register("sw.js").catch(()=>{ /* offline-first: fails silently on file:// or first offline load */ });
+    navigator.serviceWorker.register("/sw.js", { scope: "/" })
+      .then((reg)=>{ reg.update().catch(()=>{}); })
+      .catch(()=>{ /* offline-first: fails silently on file:// or first offline load */ });
   });
 }
 let deferredInstall=null;

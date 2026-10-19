@@ -2,13 +2,13 @@
   "name": "BorderHaul — Southern Africa Freight Board",
   "short_name": "BorderHaul",
   "description": "Offline-first load board matching truckers and shippers across Southern Africa by GPS location and corridor.",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#12161F",
   "theme_color": "#12161F",
   "icons": [
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
 }
