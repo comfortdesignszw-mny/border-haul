@@ -1,6 +1,7 @@
-main = "src/index.ts"   # or whatever the actual file is
 name = "border-haul"
+main = "src/index.ts"
 compatibility_date = "2026-09-08"
+
 
 
 # Serves everything in ./public as static assets (index.html, manifest.json,
