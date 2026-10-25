@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BorderHaul — Southern Africa Freight Board</title>
+<meta name="description" content="Offline-first freight board connecting truckers and shippers across Southern Africa.">
+<meta name="theme-color" content="#12161F">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BorderHaul">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{--bg:#12161F;--s1:#1A212B;--s2:#232C39;--line:#2E3846;--tx:#ECE9E0;--mu:#9AA3B2;--or:#E1571F;--or2:#C94A17;--go:#D9A93C;--gr:#4FB07D;--rd:#E5604D;--bl:#6BA8D6;--paper:#E4DFCE;--r:12px}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+h1,h2,h3{margin:0;letter-spacing:-.01em}
+h2{font-size:20px;margin-bottom:12px}
+h3{font-size:15px;margin:18px 0 8px}
+p{margin:0 0 10px}
+button,input,select,textarea{font:inherit;color:inherit}
+#app{max-width:720px;margin:0 auto;min-height:100vh}
+.mu{color:var(--mu)}
+.sm{font-size:13px}
+.logo{width:30px;height:30px;border-radius:8px;flex:none;display:block}
+.logo.big{width:72px;height:72px;border-radius:18px;margin-bottom:14px}
+.ic{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* header + nav */
+.hdr{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;background:rgba(18,22,31,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.hdr h1{font-size:18px;font-weight:800}
+.hdr h1 b{color:var(--or)}
+.sp{flex:1}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--mu);padding:5px 10px;border:1px solid var(--line);border-radius:99px;background:none}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--rd);flex:none}
+.dot.on{background:var(--gr)}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--s2);border:1px solid var(--line);display:grid;place-items:center;font-weight:800;font-size:13px;padding:0;cursor:pointer}
+main{padding:14px 16px 100px}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;max-width:720px;margin:0 auto;display:flex;background:var(--s1);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:20}
+nav.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 8px;background:none;border:0;color:var(--mu);font-size:11px;position:relative;cursor:pointer}
+nav.tabs button.on{color:var(--or)}
+.cnt{position:absolute;top:4px;left:calc(50% + 6px);background:var(--or);color:#fff;font-size:10px;font-weight:700;border-radius:99px;padding:1px 5px;min-width:16px;text-align:center}
+
+/* controls */
+.btn{appearance:none;border:0;border-radius:10px;padding:10px 16px;font-weight:700;background:var(--or);color:#fff;cursor:pointer;text-align:center}
+.btn:active{background:var(--or2)}
+.btn.s{background:transparent;border:1px solid var(--line);color:var(--tx)}
+.btn.d{background:transparent;border:1px solid #5a2b27;color:var(--rd)}
+.btn.g{background:var(--gr);color:#0c1a12}
+.btn.sm{padding:6px 12px;font-size:13px}
+.btn.w{width:100%}
+.btn[disabled]{opacity:.5}
+.fab{position:fixed;right:max(16px,calc(50% - 344px));bottom:calc(76px + env(safe-area-inset-bottom));z-index:15;border-radius:99px;padding:13px 20px;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{background:none;border:0;padding:7px 14px;color:var(--mu);font-weight:700;cursor:pointer}
+.seg button.on{background:var(--or);color:#fff}
+.seg i{font-style:normal;font-weight:500;opacity:.8;margin-left:4px}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filters select{flex:1;min-width:130px}
+input,select,textarea{width:100%;background:var(--s2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--or);outline-offset:1px}
+label{display:block;font-size:12px;color:var(--mu);font-weight:600}
+label>input,label>select,label>textarea{margin-top:4px;color:var(--tx);font-weight:400;font-size:15px}
+.stack>*+*{margin-top:12px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gps-note{font-size:12px;color:var(--mu);margin-top:6px}
+
+/* cards */
+.card{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
+.item{cursor:pointer}.item:active{background:var(--s2)}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.t{font-weight:700;font-size:16px}
+.sub{color:var(--mu);font-size:13px}
+.price{font-weight:800;color:var(--paper);white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.chip{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--s2);color:var(--mu)}
+.chip.ok{color:var(--gr)}.chip.no{color:var(--rd)}.chip.you{background:rgba(225,87,31,.16);color:#ff8f5e}
+.badge{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:6px;background:var(--s2);color:var(--mu)}
+.b-ok{background:rgba(79,176,125,.16);color:var(--gr)}.b-go{background:rgba(217,169,60,.16);color:var(--go)}.b-bl{background:rgba(107,168,214,.16);color:var(--bl)}.b-rd{background:rgba(229,96,77,.16);color:var(--rd)}
+.empty{text-align:center;color:var(--mu);padding:36px 12px}
+.empty .btn{margin-top:12px}
+.banner{border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:12px;background:var(--s1);font-size:13px}
+.banner.ro{border-color:#4a4120;background:rgba(217,169,60,.08);color:var(--go)}
+.banner.me{border-color:#3a2a22;background:rgba(225,87,31,.08);color:#ff9a6c}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.facts div{background:var(--s1);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.facts span{display:block;font-size:11px;color:var(--mu);text-transform:uppercase;letter-spacing:.05em}
+.facts b{font-size:15px}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.dim{opacity:.55}
+.unread{border-left:3px solid var(--or)}
+.match-pct{font-weight:800;color:var(--gr)}
+
+/* map */
+.map{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.map svg{display:block;width:100%;height:auto}
+.map text{fill:#59647a;font-size:11px;letter-spacing:.08em;text-anchor:middle}
+.pin{cursor:pointer}
+
+/* chat */
+.msgs{display:flex;flex-direction:column;gap:6px;padding-bottom:8px}
+.m{max-width:82%;padding:8px 12px;border-radius:14px;background:var(--s2);align-self:flex-start;word-wrap:break-word;overflow-wrap:anywhere}
+.m.me{align-self:flex-end;background:var(--or);color:#fff}
+.m.sys{align-self:center;background:none;color:var(--mu);font-size:12px;text-align:center}
+.m small{display:block;opacity:.7;font-size:11px;margin-top:2px}
+.m small button{background:none;border:0;color:inherit;text-decoration:underline;padding:0 0 0 6px;cursor:pointer;font-size:11px}
+.composer{position:sticky;bottom:calc(64px + env(safe-area-inset-bottom));display:flex;gap:8px;background:var(--bg);padding:8px 0}
+.thead{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.thead .t{flex:1}
+.iconbtn{background:none;border:1px solid var(--line);border-radius:10px;padding:7px;color:var(--tx);display:grid;place-items:center;cursor:pointer}
+
+/* sheet + gate */
+.sheet{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.scrim{position:absolute;inset:0;background:rgba(5,8,12,.72)}
+.panel{position:relative;width:100%;max-width:720px;max-height:92vh;overflow:auto;background:var(--bg);border:1px solid var(--line);border-bottom:0;border-radius:18px 18px 0 0;padding:10px 16px calc(22px + env(safe-area-inset-bottom))}
+.grab{width:42px;height:4px;border-radius:4px;background:var(--line);margin:0 auto 12px}
+#gate{position:fixed;inset:0;z-index:60;background:var(--bg);overflow:auto;display:flex;justify-content:center}
+.gin{width:100%;max-width:440px;padding:calc(34px + env(safe-area-inset-top)) 20px 30px}
+.gin h1{font-size:30px;font-weight:800}
+.gin h1 b{color:var(--or)}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.role{position:relative;display:block}
+.role input{position:absolute;opacity:0}
+.role div{border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;background:var(--s1)}
+.role input:checked+div{border-color:var(--or);background:rgba(225,87,31,.1)}
+.role b{display:block;color:var(--tx);font-size:15px}
+.role span{font-size:12px;color:var(--mu);font-weight:400}
+.err{color:var(--rd);font-size:13px;min-height:18px}
+.shgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.clip{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line;font-size:13px}
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--paper);color:#1a1a1a;padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;z-index:90;opacity:0;pointer-events:none;transition:.2s;max-width:90%;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="logo" viewBox="0 0 512 512">
+<rect width="512" height="512" fill="#12161F"/>
+<rect x="88" y="168" width="222" height="146" rx="10" fill="#E4DFCE"/>
+<path d="M118 286 L168 222 L214 262 L276 196" fill="none" stroke="#E1571F" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="276" cy="196" r="12" fill="#E1571F"/>
+<path d="M322 206h56l44 52v56H322z" fill="#E1571F"/>
+<path d="M338 222h32l30 34h-62z" fill="#12161F"/>
+<rect x="84" y="314" width="346" height="16" rx="4" fill="#C9962E"/>
+<g fill="#12161F" stroke="#E4DFCE" stroke-width="12"><circle cx="150" cy="338" r="32"/><circle cx="238" cy="338" r="32"/><circle cx="376" cy="338" r="32"/></g>
+<g fill="#C9962E"><circle cx="150" cy="338" r="9"/><circle cx="238" cy="338" r="9"/><circle cx="376" cy="338" r="9"/></g>
+<path d="M124 398h52M204 398h52M284 398h52" stroke="#C9962E" stroke-width="8" stroke-linecap="round" opacity=".8"/>
+</symbol>
+<symbol id="i-board" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
+<symbol id="i-match" viewBox="0 0 24 24"><circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/></symbol>
+</defs>
+</svg>
+
+<div id="app">
+  <header class="hdr" id="hdr"></header>
+  <main id="main"></main>
+  <nav class="tabs" id="nav" aria-label="Main"></nav>
+</div>
+<div id="sheet" class="sheet" hidden><div class="scrim" data-act="closeSheet"></div><div class="panel" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheetBody"></div></div></div>
+<div id="gate" hidden></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript><p style="padding:24px;color:#fff">BorderHaul needs JavaScript.</p></noscript>
+
+<script>
+(()=>{"use strict";
+/* ======================================================================
+   BorderHaul — offline-first freight board.
+   All data lives on this device (localStorage). No network requests.
+   ====================================================================== */
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,9);
+const now=()=>Date.now();
+const clip=(s,n)=>String(s==null?"":s).trim().slice(0,n);
+
+/* ---------- reference data ---------- */
+const CITIES=[
+["Harare","Zimbabwe",-17.8292,31.0522],["Bulawayo","Zimbabwe",-20.15,28.5833],["Mutare","Zimbabwe",-18.9707,32.6709],["Gweru","Zimbabwe",-19.45,29.8167],["Masvingo","Zimbabwe",-20.0744,30.8328],["Beitbridge","Zimbabwe",-22.2167,30.0],["Victoria Falls","Zimbabwe",-17.9243,25.8572],["Chirundu","Zimbabwe",-16.0333,28.85],
+["Johannesburg","South Africa",-26.2041,28.0473],["Pretoria","South Africa",-25.7479,28.2293],["Durban","South Africa",-29.8587,31.0218],["Cape Town","South Africa",-33.9249,18.4241],["Gqeberha","South Africa",-33.9608,25.6022],["Polokwane","South Africa",-23.9045,29.4689],["Musina","South Africa",-22.3405,30.0448],
+["Lusaka","Zambia",-15.3875,28.3228],["Ndola","Zambia",-12.9587,28.6366],["Kitwe","Zambia",-12.8024,28.2132],["Livingstone","Zambia",-17.8419,25.8543],["Chipata","Zambia",-13.6333,32.65],["Kasumbalesa","Zambia",-12.27,27.795],
+["Windhoek","Namibia",-22.5609,17.0658],["Walvis Bay","Namibia",-22.9576,14.5053],
+["Gaborone","Botswana",-24.6282,25.9231],["Francistown","Botswana",-21.167,27.5084],["Kasane","Botswana",-17.8,25.15],
+["Lilongwe","Malawi",-13.9626,33.7741],["Blantyre","Malawi",-15.7861,35.0058],
+["Maputo","Mozambique",-25.9692,32.5732],["Beira","Mozambique",-19.8317,34.8389],["Tete","Mozambique",-16.1564,33.5867],
+["Dar es Salaam","Tanzania",-6.7924,39.2083],["Mbeya","Tanzania",-8.9094,33.4608],["Tunduma","Tanzania",-9.3,32.7667]
+].map(([name,country,lat,lon])=>({name,country,lat,lon}));
+const COUNTRIES=[...new Set(CITIES.map(c=>c.country))].sort();
+const CURRENCIES=["USD","ZAR","ZMW","NAD","BWP","MWK","MZN","TZS","ZWG"];
+const TRUCK_TYPES=["Flatbed","Tautliner / curtain-side","Refrigerated","Tanker","Container / interlink","Livestock carrier","Lowbed / abnormal","Box / dry van"];
+const CARGO=["General freight","Maize / grain","Copper / minerals","Tobacco","Cement / building","Fuel (tanker)","Perishables (cold chain)","Livestock","Timber","Fertiliser","Containerised cargo","Machinery / abnormal load"];
+const BORDERS=[
+["Beitbridge","South Africa ⇄ Zimbabwe","4–24 hrs, peaks Dec/Easter",["Passport / driver ID","Vehicle registration & fitness","Cross-border road carrier permit","Customs bill of entry / T1","COMESA yellow card insurance","Cargo manifest & invoice"]],
+["Chirundu","Zimbabwe ⇄ Zambia","2–8 hrs",["Passport","Vehicle registration","Road access / carbon tax receipt","Bill of entry","Third-party insurance","Cargo manifest"]],
+["Kazungula Bridge","Zambia ⇄ Botswana","1–4 hrs",["Passport","Vehicle registration","Bridge toll receipt","COMESA / SADC insurance","Customs declaration"]],
+["Kasumbalesa","Zambia ⇄ DRC (copper corridor)","6–48 hrs, congestion common",["Passport","Vehicle registration","Customs bond","Cargo / mineral certificates","Carrier licence"]],
+["Mwami / Mchinji","Zambia ⇄ Malawi","1–3 hrs",["Passport","Vehicle registration","COMESA insurance","Bill of entry","Cargo manifest"]],
+["Nakonde / Tunduma","Zambia ⇄ Tanzania","4–24 hrs",["Passport","Vehicle registration","Tanzania transit / road permits","Customs bond / transit document","Cargo manifest"]],
+["Ressano Garcia / Lebombo","Mozambique ⇄ South Africa","2–6 hrs",["Passport","Vehicle registration","Cross-border charges receipt","Bill of entry","Cargo manifest & invoice"]],
+["Machipanda","Mozambique ⇄ Zimbabwe","2–10 hrs",["Passport","Vehicle registration","Third-party insurance","Bill of entry","Cargo manifest"]],
+["Mamuno / Buitepos","Botswana ⇄ Namibia","Under 2 hrs",["Passport","Vehicle registration","Cross-border charges receipt","Cargo manifest"]]
+];
+const city=n=>CITIES.find(c=>c.name===n);
+const cityOpts=sel=>CITIES.map(c=>[c.name,c.name+" · "+c.country]);
+
+/* ---------- helpers ---------- */
+const money=(n,c)=>n>0?c+" "+Number(n).toLocaleString("en"):"Price on request";
+const ago=t=>{const s=(now()-t)/1000;return s<60?"just now":s<3600?Math.floor(s/60)+"m ago":s<86400?Math.floor(s/3600)+"h ago":Math.floor(s/86400)+"d ago"};
+const dshort=d=>d?new Date(d+"T00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"}):"Flexible date";
+const km=(a,b,c,d)=>{const R=6371,r=x=>x*Math.PI/180,dl=r(c-a),dn=r(d-b),h=Math.sin(dl/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dn/2)**2;return 2*R*Math.atan2(Math.sqrt(h),Math.sqrt(1-h))};
+const opts=(arr,sel)=>arr.map(v=>{const a=Array.isArray(v)?v:[v,v];return `<option value="${esc(a[0])}"${a[0]===sel?" selected":""}>${esc(a[1])}</option>`}).join("");
+const digits=s=>String(s||"").replace(/\D/g,"");
+let tt;function toast(m,ms){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("on"),ms||2800)}
+async function copy(text){try{await navigator.clipboard.writeText(text);toast("Copied")}catch(e){const a=document.createElement("textarea");a.value=text;document.body.appendChild(a);a.select();try{document.execCommand("copy");toast("Copied")}catch(_){toast("Copy isn't available here")}a.remove()}}
+const getPos=()=>new Promise((res,rej)=>{if(!navigator.geolocation)return rej(new Error("no gps"));navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lon:p.coords.longitude}),rej,{enableHighAccuracy:true,timeout:12000,maximumAge:60000})});
+const nearest=(lat,lon)=>CITIES.reduce((b,c)=>km(lat,lon,c.lat,c.lon)<km(lat,lon,b.lat,b.lon)?c:b);
+const ic=n=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+
+/* ---------- storage ---------- */
+const KEY="bh2";
+const fresh=()=>({v:2,profiles:[],loads:[],trucks:[],requests:[],threads:[],messages:[],notifs:[],mk:{}});
+function loadDB(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.v===2)return Object.assign(fresh(),d)}catch(e){}return fresh()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){toast("Device storage is full. Export a backup, then clear old data.",5000)}}
+let db=loadDB();
+
+/* ---------- password hashing (local gate) ---------- */
+function sha256(bytes){
+  const rr=(v,a)=>(v>>>a)|(v<<(32-a)),mp=Math.pow,mw=4294967296,H=[],K=[],isc={};let pc=0;
+  for(let c=2;pc<64;c++){if(!isc[c]){for(let i=0;i<313;i+=c)isc[i]=c;if(pc<8)H[pc]=(mp(c,.5)*mw)|0;K[pc++]=(mp(c,1/3)*mw)|0}}
+  const len=bytes.length,pad=new Uint8Array(((len+9+63)>>6)<<6);pad.set(bytes);pad[len]=128;
+  const dv=new DataView(pad.buffer),bl=len*8;dv.setUint32(pad.length-8,Math.floor(bl/mw));dv.setUint32(pad.length-4,bl>>>0);
+  const h=H.slice();
+  for(let o=0;o<pad.length;o+=64){
+    const w=new Array(64);for(let i=0;i<16;i++)w[i]=dv.getUint32(o+i*4);
+    for(let i=16;i<64;i++){const a=w[i-15],b=w[i-2];w[i]=(w[i-16]+(rr(a,7)^rr(a,18)^(a>>>3))+w[i-7]+(rr(b,17)^rr(b,19)^(b>>>10)))|0}
+    let [a,b,c,d,e,f,g,hh]=h;
+    for(let i=0;i<64;i++){
+      const t1=(hh+(rr(e,6)^rr(e,11)^rr(e,25))+((e&f)^(~e&g))+K[i]+w[i])|0,t2=((rr(a,2)^rr(a,13)^rr(a,22))+((a&b)^(a&c)^(b&c)))|0;
+      hh=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0}
+    h[0]=(h[0]+a)|0;h[1]=(h[1]+b)|0;h[2]=(h[2]+c)|0;h[3]=(h[3]+d)|0;h[4]=(h[4]+e)|0;h[5]=(h[5]+f)|0;h[6]=(h[6]+g)|0;h[7]=(h[7]+hh)|0}
+  const out=new Uint8Array(32),ov=new DataView(out.buffer);h.forEach((v,i)=>ov.setUint32(i*4,v));return out}
+const b64=u=>{let s="";u.forEach(b=>s+=String.fromCharCode(b));return btoa(s)};
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const cat=(a,b)=>{const o=new Uint8Array(a.length+b.length);o.set(a);o.set(b,a.length);return o};
+async function kdf(pw,salt,mode){
+  const enc=new TextEncoder().encode(pw);
+  if(mode==="pbkdf2"&&window.crypto&&crypto.subtle){
+    const k=await crypto.subtle.importKey("raw",enc,"PBKDF2",false,["deriveBits"]);
+    return b64(new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt,iterations:150000},k,256)))}
+  let h=sha256(cat(salt,enc));for(let i=0;i<4000;i++)h=sha256(cat(h,enc));return b64(h)}
+async function setPw(p,pw){const salt=crypto.getRandomValues(new Uint8Array(16)),mode=(window.crypto&&crypto.subtle)?"pbkdf2":"js";p.pw={salt:b64(salt),mode,hash:await kdf(pw,salt,mode)}}
+async function checkPw(p,pw){if(!p.pw)return true;try{const h=await kdf(pw,unb64(p.pw.salt),p.pw.mode);let d=h.length^p.pw.hash.length;for(let i=0;i<h.length;i++)d|=h.charCodeAt(i)^(p.pw.hash.charCodeAt(i)||0);return d===0}catch(e){return false}}
+
+/* ---------- state ---------- */
+let me=null,guest=false,deferred=null,pending=null;
+const ui={tab:"board",kind:"loads",map:false,f:{country:"",type:"",cargo:""},inbox:"alerts",thread:null,sheet:null,keep:false,share:null};
+const profileById=id=>db.profiles.find(p=>p.id===id);
+const isLocal=id=>!!profileById(id);
+const isOwner=it=>!!me&&!it.imported&&it.owner===me.id;
+const find=(k,id)=>(k==="loads"?db.loads:db.trucks).find(x=>x.id===id);
+const unread=()=>me?db.notifs.filter(n=>n.to===me.id&&!n.read).length:0;
+
+/* ---------- matching ---------- */
+function radiusFor(t){const p=profileById(t.owner);return p&&p.set&&p.set.radius?p.set.radius:150}
+function match(l,t){
+  const typeOK=l.truckType===t.type,capOK=t.cap>=l.weight;
+  const dist=km(t.lat,t.lon,l.pLat,l.pLon),rad=radiusFor(t),near=dist<=rad,farish=dist<=rad*2;
+  const ends=(l.pCountry===t.from||l.pCountry===t.to?1:0)+(l.dCountry===t.from||l.dCountry===t.to?1:0);
+  const locOK=near||(farish&&ends>0);
+  const priceKnown=l.price>0&&t.minPrice>0&&l.cur===t.cur,priceOK=priceKnown?l.price>=t.minPrice:null;
+  let dateOK=null;if(l.date&&t.avail)dateOK=(new Date(t.avail)-new Date(l.date))/864e5<=2;
+  const score=(typeOK?25:0)+(capOK?15:0)+(near?25:farish&&ends?15:ends===2?6:0)+(priceOK===true?20:priceOK===null?8:0)+(dateOK===true?15:dateOK===null?8:0);
+  const hard=typeOK&&capOK&&locOK&&priceOK!==false&&dateOK!==false&&l.status==="posted"&&t.status==="available";
+  return{score,hard,dist,r:[
+    [typeOK?"Truck type fits":"Different truck type",typeOK],
+    [capOK?`${t.cap} t covers ${l.weight} t`:`Only ${t.cap} t capacity`,capOK],
+    [`${Math.round(dist)} km from pickup`,locOK],
+    ...(priceOK===null?[]:[[priceOK?"Price meets minimum":"Offer below minimum",priceOK]]),
+    ...(dateOK===null?[]:[[dateOK?"Dates line up":"Truck free too late",dateOK]])]}}
+function announce(l,t,m){
+  const route=l.pCity+" → "+l.dCity,pct=m.score+"%";
+  if(wants(l.owner))notify(l.owner,"match","Truck match · "+pct,`${t.type}, ${t.cap} t in ${t.city} is ${Math.round(m.dist)} km from pickup for your ${route} load.`,{open:["trucks",t.id]});
+  if(wants(t.owner))notify(t.owner,"match","Load match · "+pct,`${route}: ${l.cargo}, ${l.weight} t, ${money(l.price,l.cur)}. Pickup is ${Math.round(m.dist)} km from your truck.`,{open:["loads",l.id]})}
+function wants(id){const p=profileById(id);return !!p&&(!p.set||p.set.alerts!==false)}
+function pair(l,t){
+  if(!isLocal(l.owner)&&!isLocal(t.owner))return;
+  const key=l.id+"|"+t.id,m=match(l,t);
+  if(m.hard&&m.score>=70){if(!db.mk[key]){db.mk[key]=1;announce(l,t,m)}}else delete db.mk[key]}
+function runMatching(it,kind){
+  if(kind==="load")db.trucks.forEach(t=>pair(it,t));else db.loads.forEach(l=>pair(l,it));save()}
+function runMatchingAll(){db.loads.forEach(l=>db.trucks.forEach(t=>pair(l,t)));save()}
+
+/* ---------- notifications ---------- */
+function notify(to,type,title,body,refs){
+  if(!isLocal(to))return;
+  if(type==="message")db.notifs=db.notifs.filter(n=>!(n.to===to&&!n.read&&n.type==="message"&&n.refs&&refs&&n.refs.thread===refs.thread));
+  const n={id:uid(),to,type,title,body,refs:refs||{},ts:now(),read:false};
+  db.notifs.unshift(n);if(db.notifs.length>400)db.notifs.length=400;save();
+  if(me&&me.id===to){toast(title);osNotify(n)}}
+async function osNotify(n){
+  try{if(!("Notification" in window)||Notification.permission!=="granted")return;
+    const opt={body:n.body,icon:"icon-192.png",badge:"icon-192.png",tag:n.id};
+    const reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();
+    if(reg)reg.showNotification(n.title,opt);else new Notification(n.title,opt)}catch(e){}}
+
+/* ---------- auth / gate ---------- */
+function gate(mode,arg){
+  const g=$("#gate");g.hidden=false;let h="";
+  const brand=`<svg class="logo big" viewBox="0 0 512 512"><use href="#logo"/></svg><h1><b>Border</b>Haul</h1>`;
+  if(mode==="welcome"){
+    h=`${brand}<p class="mu" style="margin:6px 0 24px">Freight board for truckers and shippers across Southern Africa. Works fully offline, even with no signal at all.</p>
+    <button class="btn w" data-act="gateCreate">Create a profile</button>
+    ${db.profiles.length?`<button class="btn s w" style="margin-top:10px" data-act="gatePick">Sign in to an existing profile</button>`:""}
+    <button class="btn s w" style="margin-top:10px" data-act="guest">Browse as guest (read-only)</button>
+    ${deferred?`<button class="btn s w" style="margin-top:10px" data-act="install">Install app</button>`:""}
+    <p class="mu sm" style="margin-top:18px">Shipper and trucker profiles are kept separate. Only the owner of a listing can edit or delete it.</p>`}
+  if(mode==="create"){
+    h=`${brand}<h2 style="margin-top:18px">Create your profile</h2>
+    <form data-form="create" class="stack" autocomplete="off">
+      <div class="roles"><label class="role"><input type="radio" name="role" value="shipper" checked><div><b>Shipper</b><span>I have goods to move</span></div></label>
+      <label class="role"><input type="radio" name="role" value="trucker"><div><b>Trucker</b><span>I have trucks to hire</span></div></label></div>
+      <label>Name or company<input name="name" required maxlength="60" placeholder="e.g. Tendai Moyo Transport"></label>
+      <label>Base city<select name="city">${opts(cityOpts(),"Harare")}</select></label>
+      <div class="g2"><label>Phone / WhatsApp<input name="phone" type="tel" maxlength="24" placeholder="+263 77 123 4567"></label>
+      <label>Currency<select name="cur">${opts(CURRENCIES,"USD")}</select></label></div>
+      <label>Password (optional)<input name="pw" type="password" autocomplete="new-password" placeholder="Leave blank for no password"></label>
+      <label>Confirm password<input name="pw2" type="password" autocomplete="new-password"></label>
+      <p class="mu sm">A password stops others opening this profile in the app. It can't be recovered if forgotten, and listings on this device aren't encrypted.</p>
+      <button class="btn w">Create profile</button>
+      <button type="button" class="btn s w" data-act="gateBack">Back</button>
+    </form>`}
+  if(mode==="pick"){
+    h=`${brand}<h2 style="margin-top:18px">Who's using BorderHaul?</h2>`+db.profiles.map(p=>`<div class="card item" data-act="gateUser" data-id="${p.id}"><div class="row"><div><div class="t">${esc(p.name)}</div><div class="sub">${esc(p.city)}, ${esc(p.country)}</div></div><div style="text-align:right"><span class="badge ${p.role==="trucker"?"b-bl":"b-go"}">${p.role}</span>${p.pw?`<div class="sub">Password</div>`:""}</div></div></div>`).join("")+
+    `<button class="btn s w" data-act="gateCreate">New profile</button><button class="btn s w" style="margin-top:10px" data-act="guest">Browse as guest</button>`}
+  if(mode==="unlock"){
+    const p=profileById(arg);
+    h=`${brand}<h2 style="margin-top:18px">Welcome back, ${esc(p.name)}</h2>
+    <form data-form="unlock" class="stack"><input type="hidden" name="id" value="${p.id}">
+      <label>Password<input name="pw" type="password" autocomplete="current-password" autofocus required></label>
+      <div class="err" id="gerr"></div>
+      <button class="btn w">Unlock</button>
+      <button type="button" class="btn s w" data-act="gatePick">Switch profile</button></form>`}
+  g.innerHTML=`<div class="gin">${h}</div>`;g.scrollTop=0}
+const closeGate=()=>{$("#gate").hidden=true};
+function signIn(p){
+  me=profileById(p.id);guest=false;localStorage.setItem("bh2_last",me.id);sessionStorage.setItem("bh2_u",me.id);
+  ui.tab="board";ui.kind=me.role==="trucker"?"loads":"trucks";ui.thread=null;closeGate();closeSheet();render();
+  const n=unread();if(n){toast(`You have ${n} unread alert${n>1?"s":""}`);osNotify({id:"sum",title:"BorderHaul",body:`You have ${n} unread alert${n>1?"s":""}`})}}
+
+/* ---------- sheets ---------- */
+function openSheet(fn,keep){ui.sheet=fn;ui.keep=!!keep;$("#sheetBody").innerHTML=fn();$("#sheet").hidden=false;$("#sheet .panel").scrollTop=0}
+function closeSheet(){ui.sheet=null;ui.keep=false;$("#sheet").hidden=true}
+function ask(title,text,okLabel,fn,danger){pending=fn;openSheet(()=>`<h2>${esc(title)}</h2><p class="mu">${esc(text)}</p><div class="acts"><button class="btn ${danger?"d":""}" data-act="askYes">${esc(okLabel)}</button><button class="btn s" data-act="closeSheet">Cancel</button></div>`,true)}
+
+/* ---------- render ---------- */
+function render(){
+  hdr();
+  const m=$("#main");
+  m.innerHTML=ui.tab==="board"?vBoard():ui.tab==="matches"?vMatches():ui.tab==="inbox"?vInbox():ui.tab==="chats"?(ui.thread?vThread():vChats()):vMe();
+  nav();
+  if(ui.sheet&&!ui.keep)$("#sheetBody").innerHTML=ui.sheet();
+  if(ui.tab==="chats"&&ui.thread){const l=m.querySelector(".m:last-child");if(l)l.scrollIntoView({block:"end"})}}
+function hdr(){
+  const on=navigator.onLine,ready=navigator.serviceWorker&&navigator.serviceWorker.controller;
+  $("#hdr").innerHTML=`<svg class="logo" viewBox="0 0 512 512" aria-hidden="true"><use href="#logo"/></svg><h1><b>Border</b>Haul</h1><div class="sp"></div>
+  <span class="pill" title="${ready?"Saved for offline use":"Open once online to save for offline use"}"><span class="dot${on?" on":""}"></span>${on?"Online":"Offline"}${ready?" · saved":""}</span>
+  ${me?`<button class="avatar" data-act="tab" data-v="me" aria-label="My profile">${esc(me.name.trim().charAt(0).toUpperCase())}</button>`:`<button class="btn sm" data-act="signinGate">Sign in</button>`}`}
+function nav(){
+  const n=unread(),T=[["board","board","Board"],["matches","match","Matches"],["inbox","bell","Inbox"],["chats","chat","Chats"],["me","user","Me"]];
+  $("#nav").innerHTML=T.map(([k,i,l])=>`<button class="${ui.tab===k?"on":""}" data-act="tab" data-v="${k}">${ic(i)}${l}${k==="inbox"&&n?`<span class="cnt">${n>99?"99+":n}</span>`:""}</button>`).join("")}
+
+/* ---------- cards ---------- */
+const stCls={posted:"b-go",available:"b-ok",matched:"b-bl",booked:"b-bl",transit:"b-bl",delivered:"b-ok",cancelled:"b-rd",off:""};
+const stTxt={posted:"Open",available:"Available",matched:"Matched",booked:"Booked",transit:"In transit",delivered:"Delivered",cancelled:"Cancelled",off:"Off duty"};
+const stB=s=>`<span class="badge ${stCls[s]||""}">${stTxt[s]||s}</span>`;
+const dist=(lat,lon)=>me?km(me.lat,me.lon,lat,lon):null;
+const youChip=it=>isOwner(it)?`<span class="chip you">Yours</span>`:it.demo?`<span class="chip">Sample</span>`:"";
+function loadCard(l){const d=dist(l.pLat,l.pLon);return `<article class="card item${["delivered","cancelled"].includes(l.status)?" dim":""}" data-act="open" data-kind="loads" data-id="${l.id}"><div class="row"><div><div class="t">${esc(l.pCity)} → ${esc(l.dCity)}</div><div class="sub">${esc(l.cargo)} · ${l.weight} t · ${esc(l.truckType)}</div></div><div class="price">${money(l.price,l.cur)}</div></div><div class="chips">${stB(l.status)}${youChip(l)}${d!=null?`<span class="chip">${Math.round(d)} km away</span>`:""}<span class="chip">${esc(dshort(l.date))}</span><span class="chip">${ago(l.updated||l.created)}</span></div></article>`}
+function truckCard(t){const d=dist(t.lat,t.lon);return `<article class="card item${t.status==="off"?" dim":""}" data-act="open" data-kind="trucks" data-id="${t.id}"><div class="row"><div><div class="t">${esc(t.type)} · ${t.cap} t</div><div class="sub">${esc(t.city)}, ${esc(t.country)} · ${esc(t.from)} → ${esc(t.to)}</div></div><div class="price">${t.minPrice>0?"from "+money(t.minPrice,t.cur):"Rate on request"}</div></div><div class="chips">${stB(t.status)}${youChip(t)}${d!=null?`<span class="chip">${Math.round(d)} km away</span>`:""}<span class="chip">${t.avail?"Free "+esc(dshort(t.avail)):"Free now"}</span>${t.plate?`<span class="chip">${esc(t.plate)}</span>`:""}</div></article>`}
+const card=(k,it)=>k==="loads"?loadCard(it):truckCard(it);
+
+/* ---------- board ---------- */
+function filtered(k){
+  const f=ui.f;
+  let a=(k==="loads"?db.loads:db.trucks).filter(it=>{
+    if(k==="loads"){if(f.country&&it.pCountry!==f.country&&it.dCountry!==f.country)return false;if(f.type&&it.truckType!==f.type)return false;if(f.cargo&&it.cargo!==f.cargo)return false}
+    else{if(f.country&&it.country!==f.country&&it.from!==f.country&&it.to!==f.country)return false;if(f.type&&it.type!==f.type)return false}
+    return true});
+  const live=it=>["delivered","cancelled","off"].includes(it.status)?1:0,dd=it=>k==="loads"?dist(it.pLat,it.pLon):dist(it.lat,it.lon);
+  return a.sort((x,y)=>live(x)-live(y)||(me?dd(x)-dd(y):(y.updated||0)-(x.updated||0)))}
+function vBoard(){
+  const k=ui.kind,items=filtered(k),f=ui.f,all=db.loads.length+db.trucks.length;
+  let h=`<div class="bar"><div class="seg"><button class="${k==="loads"?"on":""}" data-act="kind" data-v="loads">Loads<i>${db.loads.length}</i></button><button class="${k==="trucks"?"on":""}" data-act="kind" data-v="trucks">Trucks<i>${db.trucks.length}</i></button></div>
+  <div class="seg"><button class="${!ui.map?"on":""}" data-act="view" data-v="list">List</button><button class="${ui.map?"on":""}" data-act="view" data-v="map">Map</button></div></div>
+  <div class="filters"><select data-change="filter" data-k="country" aria-label="Country">${opts([["","All countries"],...COUNTRIES],f.country)}</select>
+  <select data-change="filter" data-k="type" aria-label="Truck type">${opts([["","Any truck type"],...TRUCK_TYPES],f.type)}</select>
+  ${k==="loads"?`<select data-change="filter" data-k="cargo" aria-label="Cargo">${opts([["","Any cargo"],...CARGO],f.cargo)}</select>`:""}
+  <button class="btn s sm" data-act="borders">Border guide</button></div>`;
+  if(!all)h+=`<div class="empty"><p><b>No listings on this device yet.</b></p><p>Post the first one, or load a few sample listings to look around.</p><button class="btn" data-act="seed">Add sample listings</button></div>`;
+  else if(!items.length)h+=`<div class="empty">Nothing matches these filters.</div>`;
+  else h+=ui.map?mapView(k,items):items.map(it=>card(k,it)).join("");
+  if(me)h+=`<button class="btn fab" data-act="new">＋ ${me.role==="shipper"?"Post load":"Post truck"}</button>`;
+  return h}
+function mapView(k,items){
+  const W=500,H=585,B={a:-35,b:-1,c:11,d:40},P=(la,lo)=>[(lo-B.c)/(B.d-B.c)*W,(B.b-la)/(B.b-B.a)*H];
+  const lab=[["ZAMBIA",-13.5,27.8],["ZIMBABWE",-19.2,29.8],["SOUTH AFRICA",-29.5,24.5],["NAMIBIA",-21.5,17.5],["BOTSWANA",-22.5,24],["MALAWI",-13,34.5],["MOZAMBIQUE",-18.5,36.5],["TANZANIA",-6.5,35.5]].map(([n,la,lo])=>{const[x,y]=P(la,lo);return `<text x="${x}" y="${y}">${n}</text>`}).join("");
+  const pins=items.map(it=>{const[x,y]=k==="loads"?P(it.pLat,it.pLon):P(it.lat,it.lon);const lbl=k==="loads"?it.pCity+" → "+it.dCity:it.type+" in "+it.city;
+    return `<g class="pin" data-act="open" data-kind="${k}" data-id="${it.id}" transform="translate(${x},${y})"><title>${esc(lbl)}</title><circle r="16" fill="transparent"/>${k==="loads"?`<circle r="7" fill="#E1571F" stroke="#12161F" stroke-width="2"/>`:`<rect x="-7" y="-7" width="14" height="14" rx="3" fill="#D9A93C" stroke="#12161F" stroke-width="2"/>`}</g>`}).join("");
+  let you="";if(me){const[x,y]=P(me.lat,me.lon);you=`<circle cx="${x}" cy="${y}" r="11" fill="none" stroke="#4FB07D" stroke-width="2"/><circle cx="${x}" cy="${y}" r="4" fill="#4FB07D"/>`}
+  return `<div class="map"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Map of listings">${lab}${pins}${you}</svg></div><p class="mu sm" style="margin-top:8px">${k==="loads"?"Orange dots: load pickups.":"Gold squares: truck locations."} ${me?"Green ring: you.":""} Tap a marker for details.</p>`}
+
+/* ---------- detail ---------- */
+function openDetail(k,id){openSheet(()=>detail(k,id))}
+function ownerLine(it){const p=profileById(it.owner);return {name:p?p.name:(it.oName||"Unknown"),phone:p?p.phone:it.oPhone}}
+function detail(k,id){
+  const it=find(k,id);if(!it)return `<h2>Listing removed</h2><p class="mu">This listing is no longer available.</p><button class="btn s" data-act="closeSheet">Close</button>`;
+  const own=isOwner(it),o=ownerLine(it),L=k==="loads";
+  const title=L?`${esc(it.pCity)} → ${esc(it.dCity)}`:`${esc(it.type)} · ${it.cap} t`;
+  const d=L?dist(it.pLat,it.pLon):dist(it.lat,it.lon);
+  const facts=L?[["Cargo",it.cargo],["Weight",it.weight+" t"],["Truck needed",it.truckType],["Pickup date",dshort(it.date)],["Price offer",money(it.price,it.cur)],["Route",it.pCountry+" → "+it.dCountry]]
+    :[["Location",it.city+", "+it.country],["Corridor",it.from+" → "+it.to],["Capacity",it.cap+" t"],["Free from",it.avail?dshort(it.avail):"Now"],["Minimum price",it.minPrice>0?money(it.minPrice,it.cur):"On request"],["Plate / ID",it.plate||"—"]];
+  const reqs=db.requests.filter(r=>(L?r.loadId:r.truckId)===id&&r.to===(me&&me.id)&&r.status==="pending").length;
+  let h=`<div class="row"><h2 style="margin:0">${title}</h2>${stB(it.status)}</div>
+  ${own?`<div class="banner me" style="margin-top:10px">You own this listing. Only you can edit, delete or change its status.</div>`:`<div class="banner ro" style="margin-top:10px">Read-only. Only ${esc(o.name)} can edit or delete this listing.</div>`}
+  <div class="facts">${facts.map(([a,b])=>`<div><span>${a}</span><b>${esc(b)}</b></div>`).join("")}</div>
+  ${d!=null?`<p class="mu sm">${Math.round(d)} km from your base.</p>`:""}
+  ${it.notes?`<p>${esc(it.notes)}</p>`:""}
+  <p class="mu sm">Listed by <b style="color:var(--tx)">${esc(o.name)}</b> · updated ${ago(it.updated||it.created)}${it.imported?" · received by link":""}</p>`;
+  const wa=digits(o.phone);
+  h+=`<div class="acts">`;
+  if(own){
+    h+=`<button class="btn" data-act="edit" data-kind="${k}" data-id="${id}">Edit</button>`;
+    if(L){if(it.status==="matched")h+=`<button class="btn g" data-act="status" data-kind="loads" data-id="${id}" data-v="transit">Mark in transit</button>`;
+      if(it.status==="transit")h+=`<button class="btn g" data-act="status" data-kind="loads" data-id="${id}" data-v="delivered">Mark delivered</button>`;
+      if(["matched","cancelled"].includes(it.status))h+=`<button class="btn s" data-act="status" data-kind="loads" data-id="${id}" data-v="posted">Re-open</button>`;
+      if(["posted","matched"].includes(it.status))h+=`<button class="btn s" data-act="status" data-kind="loads" data-id="${id}" data-v="cancelled">Cancel load</button>`}
+    else{if(it.status==="available")h+=`<button class="btn s" data-act="status" data-kind="trucks" data-id="${id}" data-v="off">Set off duty</button>`;
+      if(["off","booked"].includes(it.status))h+=`<button class="btn s" data-act="status" data-kind="trucks" data-id="${id}" data-v="available">Set available</button>`}
+    h+=`<button class="btn s" data-act="share" data-kind="${k}" data-id="${id}">Share</button><button class="btn d" data-act="del" data-kind="${k}" data-id="${id}">Delete</button>`;
+    if(reqs)h+=`<button class="btn s" data-act="goReqs">${reqs} request${reqs>1?"s":""} waiting</button>`
+  }else{
+    const can=me&&((L&&me.role==="trucker")||(!L&&me.role==="shipper"));
+    if(can)h+=`<button class="btn" data-act="request" data-kind="${k}" data-id="${id}">${L?"Request this haul":"Request this truck"}</button>`;
+    const th=me&&db.threads.find(t=>(t.a===me.id||t.b===me.id)&&(L?t.loadId===id:t.truckId===id));
+    if(th)h+=`<button class="btn g" data-act="openThread" data-id="${th.id}">Open chat</button>`;
+    if(!me)h+=`<button class="btn" data-act="signinGate">Sign in to request</button>`;
+    else if(!can)h+=`<span class="mu sm" style="align-self:center">${L?"Switch to a trucker profile to request loads.":"Switch to a shipper profile to request trucks."}</span>`;
+    h+=`<button class="btn s" data-act="share" data-kind="${k}" data-id="${id}">Share</button>`;
+    if(wa.length>=7)h+=`<a class="btn s" href="https://wa.me/${wa}" target="_blank" rel="noopener" style="text-decoration:none">WhatsApp</a><a class="btn s" href="tel:+${wa}" style="text-decoration:none">Call</a>`}
+  return h+`<button class="btn s" data-act="closeSheet">Close</button></div>`}
+
+/* ---------- forms: load / truck ---------- */
+function newItem(){if(!me)return gate("welcome");openSheet(()=>me.role==="shipper"?loadForm():truckForm(),true)}
+function loadForm(l){
+  const v=l||{pCity:me.city,dCity:"Johannesburg",cargo:CARGO[0],weight:20,truckType:TRUCK_TYPES[0],date:"",price:"",cur:me.cur,notes:""};
+  return `<h2>${l?"Edit load":"Post a load"}</h2><form data-form="load" class="stack"><input type="hidden" name="id" value="${l?l.id:""}"><input type="hidden" name="lat" value="${l&&l.gps?l.pLat:""}"><input type="hidden" name="lon" value="${l&&l.gps?l.pLon:""}">
+  <div class="g2"><label>Pickup city<select name="pCity" data-change="gpsClear">${opts(cityOpts(),v.pCity)}</select></label><label>Drop-off city<select name="dCity">${opts(cityOpts(),v.dCity)}</select></label></div>
+  <div><button type="button" class="btn s sm" data-act="gps">Use my GPS for exact pickup</button><div class="gps-note" id="gpsNote">${l&&l.gps?"Exact GPS pickup point saved.":"Using the city centre as pickup point."}</div></div>
+  <div class="g2"><label>Cargo<select name="cargo">${opts(CARGO,v.cargo)}</select></label><label>Weight (tonnes)<input name="weight" type="number" min="0.5" step="0.5" value="${esc(v.weight)}" required></label></div>
+  <div class="g2"><label>Truck type needed<select name="truckType">${opts(TRUCK_TYPES,v.truckType)}</select></label><label>Pickup date<input name="date" type="date" value="${esc(v.date)}"></label></div>
+  <div class="g2"><label>Price offer<input name="price" type="number" min="0" step="10" value="${esc(v.price)}" placeholder="e.g. 14000"></label><label>Currency<select name="cur">${opts(CURRENCIES,v.cur)}</select></label></div>
+  <label>Notes (optional)<textarea name="notes" rows="2" maxlength="400" placeholder="Loading times, packaging, special handling">${esc(v.notes)}</textarea></label>
+  <button class="btn w">${l?"Save changes":"Post load"}</button><button type="button" class="btn s w" data-act="closeSheet">Cancel</button></form>`}
+function truckForm(t){
+  const v=t||{plate:"",type:TRUCK_TYPES[0],cap:30,city:me.city,from:me.country,to:"South Africa",avail:"",minPrice:"",cur:me.cur,notes:""};
+  return `<h2>${t?"Edit truck":"Post truck availability"}</h2><form data-form="truck" class="stack"><input type="hidden" name="id" value="${t?t.id:""}"><input type="hidden" name="lat" value="${t&&t.gps?t.lat:""}"><input type="hidden" name="lon" value="${t&&t.gps?t.lon:""}">
+  <div class="g2"><label>Plate / fleet no.<input name="plate" maxlength="20" value="${esc(v.plate)}" placeholder="ABC 1234"></label><label>Truck type<select name="type">${opts(TRUCK_TYPES,v.type)}</select></label></div>
+  <div class="g2"><label>Capacity (tonnes)<input name="cap" type="number" min="1" step="1" value="${esc(v.cap)}" required></label><label>Free from<input name="avail" type="date" value="${esc(v.avail)}"></label></div>
+  <label>Current location<select name="city" data-change="gpsClear">${opts(cityOpts(),v.city)}</select></label>
+  <div><button type="button" class="btn s sm" data-act="gps">Use my GPS location</button><div class="gps-note" id="gpsNote">${t&&t.gps?"Live GPS position saved.":"Using the city centre as your location."}</div></div>
+  <div class="g2"><label>Corridor from<select name="from">${opts(COUNTRIES,v.from)}</select></label><label>Corridor to<select name="to">${opts(COUNTRIES,v.to)}</select></label></div>
+  <div class="g2"><label>Minimum price<input name="minPrice" type="number" min="0" step="10" value="${esc(v.minPrice)}" placeholder="e.g. 900"></label><label>Currency<select name="cur">${opts(CURRENCIES,v.cur)}</select></label></div>
+  <label>Notes (optional)<textarea name="notes" rows="2" maxlength="400" placeholder="Trailer details, permits held, return loads">${esc(v.notes)}</textarea></label>
+  <button class="btn w">${t?"Save changes":"Post truck"}</button><button type="button" class="btn s w" data-act="closeSheet">Cancel</button></form>`}
+
+/* ---------- matches view ---------- */
+function mcard(k,it,m){
+  return `<article class="card item" data-act="open" data-kind="${k}" data-id="${it.id}"><div class="row"><div><div class="t">${k==="loads"?esc(it.pCity)+" → "+esc(it.dCity):esc(it.type)+" · "+it.cap+" t"}</div><div class="sub">${k==="loads"?esc(it.cargo)+" · "+it.weight+" t · "+money(it.price,it.cur):esc(it.city)+", "+esc(it.country)+" · "+(it.minPrice>0?"from "+money(it.minPrice,it.cur):"rate on request")}</div></div><div class="match-pct">${m.score}%</div></div>
+  <div class="chips">${m.hard?`<span class="chip ok">Strong match</span>`:""}${m.r.map(([t,ok])=>`<span class="chip ${ok?"ok":"no"}">${ok?"✓":"✕"} ${esc(t)}</span>`).join("")}</div></article>`}
+function vMatches(){
+  if(!me)return `<div class="empty"><p>Sign in to see matches for your listings.</p><button class="btn" data-act="signinGate">Sign in</button></div>`;
+  let h=`<p class="mu sm">Ranked by truck type, capacity, distance, price and dates. Strong matches also send an alert to both sides.</p>`,any=false;
+  if(me.role==="shipper"){
+    db.loads.filter(l=>l.owner===me.id&&l.status==="posted").forEach(l=>{any=true;
+      const r=db.trucks.filter(t=>t.status==="available").map(t=>({t,m:match(l,t)})).filter(x=>x.m.score>=40).sort((a,b)=>b.m.score-a.m.score).slice(0,5);
+      h+=`<h3>${esc(l.pCity)} → ${esc(l.dCity)} <span class="mu">· ${esc(l.cargo)}</span></h3>`+(r.length?r.map(x=>mcard("trucks",x.t,x.m)).join(""):`<div class="card mu sm">No trucks match yet. You'll get an alert when one is listed.</div>`)})}
+  else{
+    db.trucks.filter(t=>t.owner===me.id&&t.status==="available").forEach(t=>{any=true;
+      const r=db.loads.filter(l=>l.status==="posted").map(l=>({l,m:match(l,t)})).filter(x=>x.m.score>=40).sort((a,b)=>b.m.score-a.m.score).slice(0,5);
+      h+=`<h3>${esc(t.type)} · ${t.cap} t <span class="mu">· ${esc(t.city)}</span></h3>`+(r.length?r.map(x=>mcard("loads",x.l,x.m)).join(""):`<div class="card mu sm">No loads match yet. You'll get an alert when one is posted.</div>`)})}
+  if(!any)h=`<div class="empty"><p>${me.role==="shipper"?"Post a load":"Post a truck"} and matching ${me.role==="shipper"?"trucks":"loads"} will show up here.</p><button class="btn" data-act="new">＋ ${me.role==="shipper"?"Post load":"Post truck"}</button></div>`;
+  return h}
+
+/* ---------- inbox: alerts + requests ---------- */
+function vInbox(){
+  if(!me)return `<div class="empty"><p>Sign in to see your alerts and requests.</p><button class="btn" data-act="signinGate">Sign in</button></div>`;
+  const mine=db.notifs.filter(n=>n.to===me.id),inc=db.requests.filter(r=>r.to===me.id),out=db.requests.filter(r=>r.by===me.id);
+  const pend=inc.filter(r=>r.status==="pending").length;
+  let h="";
+  if("Notification" in window&&Notification.permission==="default")h+=`<div class="banner">Get device alerts for requests and matches. <button class="btn sm" style="margin-left:8px" data-act="devNotif">Turn on</button></div>`;
+  h+=`<div class="bar"><div class="seg"><button class="${ui.inbox==="alerts"?"on":""}" data-act="inboxTab" data-v="alerts">Alerts<i>${unread()}</i></button><button class="${ui.inbox==="reqs"?"on":""}" data-act="inboxTab" data-v="reqs">Requests<i>${pend}</i></button></div>${ui.inbox==="alerts"&&mine.length?`<div><button class="btn s sm" data-act="readAll">Mark read</button> <button class="btn s sm" data-act="clearAlerts">Clear</button></div>`:""}</div>`;
+  if(ui.inbox==="alerts"){
+    h+=mine.length?mine.map(n=>`<article class="card item${n.read?"":" unread"}" data-act="notif" data-id="${n.id}"><div class="row"><div class="t">${esc(n.title)}</div><div class="sub">${ago(n.ts)}</div></div><div class="sub">${esc(n.body)}</div></article>`).join(""):`<div class="empty">No alerts yet. Requests, replies, messages and matching hauls will appear here.</div>`}
+  else{
+    h+=`<h3>Received</h3>`+(inc.length?inc.map(r=>reqCard(r,true)).join(""):`<div class="card mu sm">No requests received.</div>`)+`<h3>Sent</h3>`+(out.length?out.map(r=>reqCard(r,false)).join(""):`<div class="card mu sm">No requests sent.</div>`)}
+  return h}
+function reqCard(r,incoming){
+  const l=db.loads.find(x=>x.id===r.loadId),t=db.trucks.find(x=>x.id===r.truckId),who=profileById(incoming?r.by:r.to);
+  const cls={pending:"b-go",accepted:"b-ok",declined:"b-rd",cancelled:"",expired:""}[r.status];
+  return `<article class="card"><div class="row"><div><div class="t">${l?esc(l.pCity)+" → "+esc(l.dCity):"Load removed"}</div><div class="sub">${t?esc(t.type)+" · "+t.cap+" t · "+esc(t.city):"Truck removed"}</div></div><span class="badge ${cls}">${r.status}</span></div>
+  <div class="sub" style="margin-top:6px">${incoming?"From":"To"} <b style="color:var(--tx)">${esc(who?who.name:"owner (outside this device)")}</b> · ${ago(r.created)}</div>${r.msg?`<p style="margin:6px 0 0">${esc(r.msg)}</p>`:""}
+  <div class="acts">${incoming&&r.status==="pending"?`<button class="btn g sm" data-act="respond" data-id="${r.id}" data-v="accepted">Accept</button><button class="btn d sm" data-act="respond" data-id="${r.id}" data-v="declined">Decline</button>`:""}${!incoming&&r.status==="pending"?`<button class="btn s sm" data-act="cancelReq" data-id="${r.id}">Cancel request</button>`:""}${r.status==="accepted"?`<button class="btn sm" data-act="openThreadFor" data-id="${r.id}">Open chat</button>`:""}</div></article>`}
+
+/* ---------- requests ---------- */
+function requestSheet(k,id){
+  const it=find(k,id);if(!it)return;
+  if(!me)return gate("welcome");
+  if(!((k==="loads"&&me.role==="trucker")||(k==="trucks"&&me.role==="shipper")))return toast(k==="loads"?"Only trucker profiles can request loads":"Only shipper profiles can request trucks");
+  const mine=k==="loads"?db.trucks.filter(t=>t.owner===me.id&&t.status==="available"):db.loads.filter(l=>l.owner===me.id&&l.status==="posted");
+  if(!mine.length)return openSheet(()=>`<h2>${k==="loads"?"Add a truck first":"Post a load first"}</h2><p class="mu">${k==="loads"?"You need an available truck to request a haul.":"You need an open load to request a truck."}</p><div class="acts"><button class="btn" data-act="new">${k==="loads"?"Post truck":"Post load"}</button><button class="btn s" data-act="closeSheet">Close</button></div>`);
+  openSheet(()=>`<h2>${k==="loads"?"Request this haul":"Request this truck"}</h2><form data-form="request" class="stack"><input type="hidden" name="k" value="${k}"><input type="hidden" name="id" value="${id}">
+  <label>${k==="loads"?"Which truck?":"Which load?"}<select name="mine">${mine.map(m=>k==="loads"?`<option value="${m.id}">${esc((m.plate?m.plate+" · ":"")+m.type+" · "+m.cap+" t · "+m.city)}</option>`:`<option value="${m.id}">${esc(m.pCity+" → "+m.dCity+" · "+m.cargo)}</option>`).join("")}</select></label>
+  <label>Message (optional)<textarea name="msg" rows="2" maxlength="240" placeholder="Anything the owner should know"></textarea></label>
+  <button class="btn w">Send request</button><button type="button" class="btn s w" data-act="closeSheet">Cancel</button></form>`,true)}
+function respond(id,v){
+  const r=db.requests.find(x=>x.id===id);if(!r||!me||r.to!==me.id||r.status!=="pending")return;
+  const l=db.loads.find(x=>x.id===r.loadId),t=db.trucks.find(x=>x.id===r.truckId);
+  if(v==="accepted"){
+    if(!l||!t||l.status!=="posted"||t.status!=="available"){r.status="expired";r.updated=now();save();render();return toast("This listing is no longer available")}
+    r.status="accepted";l.status="matched";l.truckId=t.id;t.status="booked";l.updated=t.updated=now();
+    db.requests.forEach(o=>{if(o.id!==r.id&&o.status==="pending"&&(o.loadId===l.id||o.truckId===t.id)){o.status="declined";o.updated=now();notify(o.by,"declined","Request closed","The listing was matched with someone else.",{tab:"inbox"})}});
+    const th=ensureThread(l,t);
+    notify(r.by,"accepted","Request accepted",`${me.name} accepted your request for ${l.pCity} → ${l.dCity}. You can chat now.`,{thread:th.id});
+    toast("Accepted. A chat has been opened.")}
+  else{r.status="declined";notify(r.by,"declined","Request declined",`${me.name} declined your request for ${l?l.pCity+" → "+l.dCity:"a listing"}.`,{tab:"inbox"});toast("Request declined")}
+  r.updated=now();save();render()}
+function ensureThread(l,t){
+  let th=db.threads.find(x=>x.loadId===l.id&&x.truckId===t.id);
+  if(!th){th={id:uid(),loadId:l.id,truckId:t.id,a:l.owner,b:t.owner,created:now(),hidden:{}};db.threads.push(th);
+    db.messages.push({id:uid(),tid:th.id,from:"sys",text:`Matched: ${l.pCity} → ${l.dCity} with ${t.type} (${t.cap} t).`,ts:now()})}
+  th.hidden={};save();return th}
+
+/* ---------- chats ---------- */
+const myThreads=()=>me?db.threads.filter(t=>(t.a===me.id||t.b===me.id)&&!(t.hidden&&t.hidden[me.id])):[];
+const lastMsg=id=>{const a=db.messages.filter(m=>m.tid===id);return a[a.length-1]};
+function otherName(th){const o=th.a===me.id?th.b:th.a,p=profileById(o);return p?p.name:"Other party"}
+function vChats(){
+  if(!me)return `<div class="empty"><p>Sign in to see your conversations.</p><button class="btn" data-act="signinGate">Sign in</button></div>`;
+  const a=myThreads().sort((x,y)=>((lastMsg(y.id)||{}).ts||0)-((lastMsg(x.id)||{}).ts||0));
+  if(!a.length)return `<div class="empty">No conversations yet. A chat opens when a request is accepted.</div>`;
+  return a.map(th=>{const l=db.loads.find(x=>x.id===th.loadId),m=lastMsg(th.id);return `<article class="card item" data-act="openThread" data-id="${th.id}"><div class="row"><div class="t">${esc(otherName(th))}</div><div class="sub">${m?ago(m.ts):""}</div></div><div class="sub">${l?esc(l.pCity)+" → "+esc(l.dCity):"Load removed"}</div>${m?`<div class="sub" style="margin-top:4px">${m.from===me.id?"You: ":""}${esc(m.text.slice(0,70))}</div>`:""}</article>`}).join("")}
+function vThread(){
+  const th=db.threads.find(x=>x.id===ui.thread);if(!th||!me||(th.a!==me.id&&th.b!==me.id)){ui.thread=null;return vChats()}
+  const l=db.loads.find(x=>x.id===th.loadId),ms=db.messages.filter(m=>m.tid===th.id);
+  return `<div class="thead"><button class="iconbtn" data-act="closeThread" aria-label="Back">${ic("back")}</button><div class="t">${esc(otherName(th))}<div class="sub">${l?esc(l.pCity)+" → "+esc(l.dCity):"Load removed"}</div></div><button class="iconbtn" data-act="shareThread" aria-label="Share conversation">${ic("share")}</button><button class="btn d sm" data-act="delThread">Delete</button></div>
+  <div class="msgs">${ms.map(m=>m.from==="sys"?`<div class="m sys">${esc(m.text)}</div>`:`<div class="m${m.from===me.id?" me":""}">${esc(m.text)}<small>${ago(m.ts)}${m.from===me.id?`<button data-act="delMsg" data-id="${m.id}">delete</button>`:""}</small></div>`).join("")}</div>
+  <form class="composer" data-form="msg"><input name="text" placeholder="Type a message" maxlength="1000" autocomplete="off" required><button class="btn">Send</button></form>`}
+function openThread(id){const th=db.threads.find(x=>x.id===id);if(!th||!me||(th.a!==me.id&&th.b!==me.id))return;
+  db.notifs.forEach(n=>{if(n.to===me.id&&n.refs&&n.refs.thread===id)n.read=true});save();ui.tab="chats";ui.thread=id;closeSheet();render()}
+
+/* ---------- me ---------- */
+function vMe(){
+  if(!me)return `<div class="empty"><p>You're browsing as a guest (read-only).</p><button class="btn" data-act="signinGate">Sign in or create a profile</button></div>`+(deferred?`<div class="empty"><button class="btn s" data-act="install">Install app</button></div>`:"");
+  const L=db.loads.filter(x=>x.owner===me.id),T=db.trucks.filter(x=>x.owner===me.id),ready=navigator.serviceWorker&&navigator.serviceWorker.controller;
+  const perm="Notification" in window?Notification.permission:"unsupported";
+  return `<div class="card"><div class="row"><div><div class="t">${esc(me.name)}</div><div class="sub">${esc(me.city)}, ${esc(me.country)}${me.phone?" · "+esc(me.phone):""}</div></div><span class="badge ${me.role==="trucker"?"b-bl":"b-go"}">${me.role}</span></div><div class="acts"><button class="btn s sm" data-act="editProfile">Edit profile</button><button class="btn s sm" data-act="switchProfile">Switch profile</button></div></div>
+  <h3>My ${me.role==="shipper"?"loads":"trucks"} <span class="mu">(${me.role==="shipper"?L.length:T.length})</span></h3>
+  ${(me.role==="shipper"?L.map(loadCard):T.map(truckCard)).join("")||`<div class="card mu sm">Nothing posted yet.</div>`}
+  <button class="btn w" data-act="new">＋ ${me.role==="shipper"?"Post a load":"Post a truck"}</button>
+  <h3>Security</h3><div class="card"><div class="row"><div><div class="t" style="font-size:15px">${me.pw?"Password protected":"No password"}</div><div class="sub">Protects this profile in the app on this device.</div></div></div><div class="acts"><button class="btn s sm" data-act="pw" data-v="${me.pw?"change":"set"}">${me.pw?"Change password":"Set password"}</button>${me.pw?`<button class="btn s sm" data-act="pw" data-v="remove">Remove</button><button class="btn s sm" data-act="lock">Lock now</button>`:""}</div></div>
+  <h3>Alerts</h3><div class="card"><label style="display:flex;justify-content:space-between;align-items:center;font-size:15px;color:var(--tx)">Match alerts<input type="checkbox" style="width:auto" data-change="alertsToggle" ${me.set.alerts!==false?"checked":""}></label>
+  <label style="margin-top:12px">Match radius (km from your truck or pickup)<select data-change="radius">${opts([50,100,150,250,500].map(v=>[String(v),v+" km"]),String(me.set.radius||150))}</select></label>
+  <div class="sub" style="margin-top:10px">Device notifications: ${perm==="granted"?"on":perm==="denied"?"blocked in browser settings":perm==="unsupported"?"not supported here":"off"} ${perm==="default"?`<button class="btn sm" style="margin-left:8px" data-act="devNotif">Turn on</button>`:""}</div></div>
+  <h3>Data &amp; offline</h3><div class="card"><div class="sub">${ready?"Saved on this device. The app opens with no connection.":"Open the app once while online so it can save itself for offline use."}</div>
+  <div class="acts"><button class="btn s sm" data-act="export">Export backup</button><label class="btn s sm" style="display:inline-block;margin:0;color:var(--tx);font-size:13px">Import backup<input type="file" accept="application/json" data-change="importFile" hidden></label><button class="btn s sm" data-act="borders">Border guide</button>${deferred?`<button class="btn s sm" data-act="install">Install app</button>`:""}${db.loads.some(x=>x.demo)||db.trucks.some(x=>x.demo)?`<button class="btn s sm" data-act="unseed">Remove samples</button>`:`<button class="btn s sm" data-act="seed">Add samples</button>`}</div></div>
+  <div class="acts" style="margin-top:18px"><button class="btn d sm" data-act="delProfile">Delete this profile</button></div>
+  <p class="mu sm" style="margin-top:14px">BorderHaul keeps everything on this device. Listings you share by link arrive on other phones as read-only copies.</p>`}
+
+/* ---------- sharing ---------- */
+const enc=o=>{const u=new TextEncoder().encode(JSON.stringify(o));return b64(u).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")};
+const dec=s=>{s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";return JSON.parse(new TextDecoder().decode(unb64(s)))};
+const LKEYS=["id","owner","oName","oPhone","pCity","pLat","pLon","gps","dCity","cargo","weight","truckType","date","price","cur","notes","status","created","updated"];
+const TKEYS=["id","owner","oName","oPhone","plate","type","cap","city","lat","lon","gps","from","to","avail","minPrice","cur","notes","status","created","updated"];
+function shareInfo(k,it){
+  const o=ownerLine(it),base=location.href.split("#")[0],pick=(src,keys)=>{const r={};keys.forEach(x=>{if(src[x]!==undefined)r[x]=src[x]});return r};
+  const url=base+"#s="+enc({t:k==="loads"?"l":"t",d:Object.assign(pick(it,k==="loads"?LKEYS:TKEYS),{oName:o.name,oPhone:o.phone||""})});
+  const text=k==="loads"?`🚛 Load available: ${it.pCity} → ${it.dCity}\n${it.cargo} · ${it.weight} t · ${it.truckType}\n${money(it.price,it.cur)} · ${dshort(it.date)}\nPosted by ${o.name} on BorderHaul`
+    :`🚛 Truck available: ${it.type} · ${it.cap} t in ${it.city}\nCorridor: ${it.from} → ${it.to}\n${it.minPrice>0?"From "+money(it.minPrice,it.cur):"Rate on request"} · ${it.avail?"Free "+dshort(it.avail):"Free now"}\nListed by ${o.name} on BorderHaul`;
+  return{title:k==="loads"?"Load: "+it.pCity+" → "+it.dCity:"Truck in "+it.city,text,url}}
+function shareSheet(info){
+  ui.share=info;
+  openSheet(()=>`<h2>Share</h2><div class="card"><div class="clip">${esc(info.text)}</div></div>
+  <div class="shgrid">${navigator.share?`<button class="btn" data-act="sh" data-v="native">Share…</button>`:""}<button class="btn s" data-act="sh" data-v="wa">WhatsApp</button><button class="btn s" data-act="sh" data-v="tg">Telegram</button>${info.url?`<button class="btn s" data-act="sh" data-v="fb">Facebook</button><button class="btn s" data-act="sh" data-v="x">X (Twitter)</button><button class="btn s" data-act="sh" data-v="li">LinkedIn</button>`:""}<button class="btn s" data-act="sh" data-v="mail">Email</button>${info.url?`<button class="btn s" data-act="sh" data-v="link">Copy link</button>`:""}<button class="btn s" data-act="sh" data-v="text">Copy text</button></div>
+  <p class="mu sm" style="margin-top:12px">${info.url?"The link carries the listing inside it, so the other person sees a read-only copy even if they were offline when you made it.":"Conversation text is shared as plain text."} Social apps need a connection to send.</p>
+  <button class="btn s w" style="margin-top:8px" data-act="closeSheet">Close</button>`,true)}
+function doShare(v){
+  const s=ui.share;if(!s)return;const full=s.text+(s.url?"\n"+s.url:""),e=encodeURIComponent;
+  if(v==="native")return navigator.share({title:s.title,text:s.text,url:s.url||undefined}).catch(()=>{});
+  if(v==="link")return copy(s.url);if(v==="text")return copy(full);
+  const U={wa:"https://wa.me/?text="+e(full),tg:"https://t.me/share/url?url="+e(s.url||"https://t.me")+"&text="+e(s.text),fb:"https://www.facebook.com/sharer/sharer.php?u="+e(s.url)+"&quote="+e(s.text),x:"https://twitter.com/intent/tweet?text="+e(s.text)+"&url="+e(s.url),li:"https://www.linkedin.com/sharing/share-offsite/?url="+e(s.url),mail:"mailto:?subject="+e(s.title)+"&body="+e(full)}[v];
+  if(!navigator.onLine&&v!=="mail"){toast("You're offline. Copy the link and send it once you have a connection.",4500);return}
+  window.open(U,"_blank","noopener")}
+const S=(v,n)=>clip(v,n||80),N=(v,d)=>{v=parseFloat(v);return isFinite(v)?v:d};
+function importHash(){
+  const m=location.hash.match(/^#s=(.+)$/);if(!m)return;
+  history.replaceState(null,"",location.pathname+location.search);
+  try{
+    const o=dec(m[1]),d=o.d,L=o.t==="l",id=S(d.id,24).replace(/[^a-z0-9]/gi,""),owner=S(d.owner,24).replace(/[^a-z0-9]/gi,"");
+    if(!id||!owner)throw 0;
+    const stats=L?["posted","matched","transit","delivered","cancelled"]:["available","booked","off"];
+    const base={id,owner,oName:S(d.oName,60),oPhone:S(d.oPhone,24),cur:CURRENCIES.includes(d.cur)?d.cur:"USD",notes:S(d.notes,400),status:stats.includes(d.status)?d.status:stats[0],created:N(d.created,now()),updated:N(d.updated,now()),imported:true,gps:!!d.gps};
+    let it;
+    if(L){const p=city(d.pCity),q=city(d.dCity);if(!p||!q)throw 0;
+      it=Object.assign(base,{pCity:p.name,pCountry:p.country,pLat:N(d.pLat,p.lat),pLon:N(d.pLon,p.lon),dCity:q.name,dCountry:q.country,dLat:q.lat,dLon:q.lon,cargo:S(d.cargo,40),weight:Math.max(0,N(d.weight,0)),truckType:TRUCK_TYPES.includes(d.truckType)?d.truckType:TRUCK_TYPES[0],date:/^\d{4}-\d\d-\d\d$/.test(d.date)?d.date:"",price:Math.max(0,N(d.price,0))})}
+    else{const c=city(d.city);if(!c)throw 0;
+      it=Object.assign(base,{plate:S(d.plate,20),type:TRUCK_TYPES.includes(d.type)?d.type:TRUCK_TYPES[0],cap:Math.max(0,N(d.cap,0)),city:c.name,country:c.country,lat:N(d.lat,c.lat),lon:N(d.lon,c.lon),from:COUNTRIES.includes(d.from)?d.from:c.country,to:COUNTRIES.includes(d.to)?d.to:c.country,avail:/^\d{4}-\d\d-\d\d$/.test(d.avail)?d.avail:"",minPrice:Math.max(0,N(d.minPrice,0))})}
+    const list=L?db.loads:db.trucks,ex=list.find(x=>x.id===id);
+    if(ex&&!ex.imported)return toast("That listing is already on this device");
+    if(ex){if((ex.updated||0)>=it.updated)return toast("Already up to date");list[list.indexOf(ex)]=it}else list.unshift(it);
+    save();runMatching(it,L?"load":"truck");ui.tab="board";ui.kind=L?"loads":"trucks";render();toast("Listing received. It's read-only on your device.");openDetail(L?"loads":"trucks",id)
+  }catch(e){toast("That shared link couldn't be read")}}
+
+/* ---------- sample data ---------- */
+function seed(){
+  const mk=(a,b,cargo,w,tt,price,cur,age)=>{const p=city(a),q=city(b);return{id:uid(),owner:"demo",oName:"Sample shipper",oPhone:"",pCity:p.name,pCountry:p.country,pLat:p.lat,pLon:p.lon,gps:false,dCity:q.name,dCountry:q.country,dLat:q.lat,dLon:q.lon,cargo,weight:w,truckType:tt,date:"",price,cur,notes:"Sample listing",status:"posted",created:now()-age*36e5,updated:now()-age*36e5,demo:true,imported:true}};
+  const tk=(c,f,t,type,cap,min,cur,age)=>{const x=city(c);return{id:uid(),owner:"demo",oName:"Sample trucker",oPhone:"",plate:"",type,cap,city:x.name,country:x.country,lat:x.lat,lon:x.lon,gps:false,from:f,to:t,avail:"",minPrice:min,cur,notes:"Sample listing",status:"available",created:now()-age*36e5,updated:now()-age*36e5,demo:true,imported:true}};
+  db.loads.push(mk("Harare","Johannesburg","Tobacco",28,"Tautliner / curtain-side",14000,"USD",2),mk("Lusaka","Ndola","Copper / minerals",22,"Flatbed",8500,"ZMW",1),mk("Bulawayo","Johannesburg","General freight",18,"Box / dry van",11000,"ZAR",5),mk("Gaborone","Maputo","Containerised cargo",24,"Container / interlink",0,"USD",24),mk("Dar es Salaam","Lusaka","Fertiliser",30,"Flatbed",6200,"USD",3));
+  db.trucks.push(tk("Harare","Zimbabwe","South Africa","Tautliner / curtain-side",30,900,"USD",3),tk("Lusaka","Zambia","Tanzania","Flatbed",26,500,"USD",6),tk("Johannesburg","South Africa","Mozambique","Container / interlink",28,0,"USD",1),tk("Windhoek","Namibia","Botswana","Refrigerated",20,0,"USD",9));
+  save();runMatchingAll()}
+
+/* ---------- actions (click delegation) ---------- */
+const A={
+tab(el){ui.tab=el.dataset.v;ui.thread=null;render();window.scrollTo(0,0)},
+kind(el){ui.kind=el.dataset.v;render()},
+view(el){ui.map=el.dataset.v==="map";render()},
+open(el){openDetail(el.dataset.kind,el.dataset.id)},
+closeSheet(){closeSheet()},
+askYes(){const f=pending;pending=null;closeSheet();if(f)f()},
+new(){closeSheet();newItem()},
+gateCreate(){gate("create")},gateBack(){gate("welcome")},gatePick(){gate("pick")},
+gateUser(el){const p=profileById(el.dataset.id);if(!p)return;if(p.pw)gate("unlock",p.id);else signIn(p)},
+guest(){guest=true;me=null;closeGate();render()},
+signinGate(){closeSheet();gate(db.profiles.length?"pick":"welcome")},
+switchProfile(){sessionStorage.removeItem("bh2_u");me=null;render();gate("pick")},
+lock(){if(!me.pw)return;sessionStorage.removeItem("bh2_u");const id=me.id;me=null;render();gate("unlock",id)},
+seed(){seed();render();toast("Sample listings added")},
+unseed(){db.loads=db.loads.filter(x=>!x.demo);db.trucks=db.trucks.filter(x=>!x.demo);save();render();toast("Samples removed")},
+borders(){openSheet(()=>`<h2>Border post guide</h2><p class="mu sm">Typical requirements and waits. Always confirm with your clearing agent before travel.</p>${BORDERS.map(b=>`<div class="card"><div class="t">${esc(b[0])}</div><div class="sub">${esc(b[1])} · ${esc(b[2])}</div><ul class="sub" style="margin:8px 0 0;padding-left:18px">${b[3].map(d=>`<li>${esc(d)}</li>`).join("")}</ul></div>`).join("")}<button class="btn s w" data-act="closeSheet">Close</button>`)},
+edit(el){const it=find(el.dataset.kind,el.dataset.id);if(!it||!guard(it,"edit"))return;openSheet(()=>el.dataset.kind==="loads"?loadForm(it):truckForm(it),true)},
+del(el){const k=el.dataset.kind,it=find(k,el.dataset.id);if(!it||!guard(it,"delete"))return;ask("Delete this listing?","This removes it from the board and cancels related requests. It can't be undone.","Delete",()=>removeItem(k,it.id),true)},
+status(el){setStatus(el.dataset.kind,el.dataset.id,el.dataset.v)},
+share(el){const it=find(el.dataset.kind,el.dataset.id);if(it)shareSheet(shareInfo(el.dataset.kind,it))},
+sh(el){doShare(el.dataset.v)},
+request(el){requestSheet(el.dataset.kind,el.dataset.id)},
+respond(el){respond(el.dataset.id,el.dataset.v)},
+cancelReq(el){const r=db.requests.find(x=>x.id===el.dataset.id);if(!r||r.by!==(me&&me.id))return;r.status="cancelled";r.updated=now();notify(r.to,"declined","Request cancelled",`${me.name} cancelled their request.`,{tab:"inbox"});save();render()},
+goReqs(){closeSheet();ui.tab="inbox";ui.inbox="reqs";render()},
+inboxTab(el){ui.inbox=el.dataset.v;render()},
+notif(el){const n=db.notifs.find(x=>x.id===el.dataset.id);if(!n||!me||n.to!==me.id)return;n.read=true;save();const r=n.refs||{};
+  if(r.open&&find(r.open[0],r.open[1])){ui.tab="board";ui.kind=r.open[0];render();openDetail(r.open[0],r.open[1])}
+  else if(r.thread&&db.threads.some(t=>t.id===r.thread))openThread(r.thread);
+  else if(n.type==="request"){ui.inbox="reqs";render()}else render()},
+readAll(){db.notifs.forEach(n=>{if(me&&n.to===me.id)n.read=true});save();render()},
+clearAlerts(){ask("Clear all alerts?","This removes every alert for this profile.","Clear",()=>{db.notifs=db.notifs.filter(n=>n.to!==me.id);save();render()})},
+openThread(el){openThread(el.dataset.id)},
+openThreadFor(el){const r=db.requests.find(x=>x.id===el.dataset.id);const th=r&&db.threads.find(t=>t.loadId===r.loadId&&t.truckId===r.truckId);if(th)openThread(th.id)},
+closeThread(){ui.thread=null;render()},
+shareThread(){const th=db.threads.find(x=>x.id===ui.thread);if(!th)return;const l=db.loads.find(x=>x.id===th.loadId);
+  const lines=db.messages.filter(m=>m.tid===th.id&&m.from!=="sys").map(m=>{const p=profileById(m.from);return `[${new Date(m.ts).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}] ${p?p.name:"?"}: ${m.text}`});
+  shareSheet({title:"BorderHaul conversation",text:`BorderHaul conversation${l?": "+l.pCity+" → "+l.dCity:""}\n`+lines.join("\n"),url:""})},
+delThread(){ask("Delete this conversation?","It disappears from your chats. The other person keeps their copy.","Delete",()=>{const th=db.threads.find(x=>x.id===ui.thread);if(th){th.hidden=th.hidden||{};th.hidden[me.id]=true;if(th.hidden[th.a]&&th.hidden[th.b]){db.threads=db.threads.filter(x=>x!==th);db.messages=db.messages.filter(m=>m.tid!==th.id)}}save();ui.thread=null;render()},true)},
+delMsg(el){const m=db.messages.find(x=>x.id===el.dataset.id);if(!m||m.from!==me.id)return toast("You can only delete your own messages");db.messages=db.messages.filter(x=>x!==m);save();render()},
+gps(){const f=$("#sheetBody form");if(!f)return;$("#gpsNote").textContent="Finding your position…";
+  getPos().then(p=>{const E=f.elements;E.lat.value=p.lat;E.lon.value=p.lon;const c=nearest(p.lat,p.lon),sel=E.pCity||E.city;if(sel)sel.value=c.name;$("#gpsNote").textContent=`GPS set (${p.lat.toFixed(3)}, ${p.lon.toFixed(3)}), nearest city: ${c.name}.`}).catch(()=>{$("#gpsNote").textContent="Couldn't read GPS. Pick the nearest city instead."})},
+devNotif(){if(!("Notification" in window))return toast("Notifications aren't supported on this device");Notification.requestPermission().then(r=>{toast(r==="granted"?"Device alerts are on":"Device alerts weren't enabled");render()})},
+install(){if(!deferred)return;deferred.prompt();deferred.userChoice.finally(()=>{deferred=null;render()})},
+editProfile(){openSheet(()=>`<h2>Edit profile</h2><form data-form="profile" class="stack"><label>Name or company<input name="name" required maxlength="60" value="${esc(me.name)}"></label><label>Base city<select name="city">${opts(cityOpts(),me.city)}</select></label><div class="g2"><label>Phone / WhatsApp<input name="phone" type="tel" maxlength="24" value="${esc(me.phone)}"></label><label>Currency<select name="cur">${opts(CURRENCIES,me.cur)}</select></label></div><p class="mu sm">Your role (${me.role}) can't be changed. Create a separate profile for the other role.</p><button class="btn w">Save</button><button type="button" class="btn s w" data-act="closeSheet">Cancel</button></form>`,true)},
+pw(el){const v=el.dataset.v;openSheet(()=>`<h2>${v==="set"?"Set a password":v==="change"?"Change password":"Remove password"}</h2><form data-form="pw" class="stack"><input type="hidden" name="mode" value="${v}">${v!=="set"?`<label>Current password<input name="old" type="password" autocomplete="current-password" required></label>`:""}${v!=="remove"?`<label>New password<input name="n1" type="password" autocomplete="new-password" required minlength="4"></label><label>Confirm new password<input name="n2" type="password" autocomplete="new-password" required></label>`:""}<div class="err" id="perr"></div><p class="mu sm">There is no recovery if you forget it. Deleting the profile is the only way back in.</p><button class="btn w">${v==="remove"?"Remove password":"Save"}</button><button type="button" class="btn s w" data-act="closeSheet">Cancel</button></form>`,true)},
+export(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(db)],{type:"application/json"}));a.download="borderhaul-backup-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},600);toast("Backup downloaded")},
+delProfile(){ask("Delete this profile?","Your profile, listings, requests, alerts and conversations on this device are removed for good.","Delete profile",()=>{const id=me.id;
+  db.loads.filter(x=>x.owner===id).forEach(x=>removeItem("loads",x.id,true));db.trucks.filter(x=>x.owner===id).forEach(x=>removeItem("trucks",x.id,true));
+  db.requests=db.requests.filter(r=>r.by!==id&&r.to!==id);db.notifs=db.notifs.filter(n=>n.to!==id);
+  const dead=db.threads.filter(t=>t.a===id||t.b===id).map(t=>t.id);db.threads=db.threads.filter(t=>!dead.includes(t.id));db.messages=db.messages.filter(m=>!dead.includes(m.tid));
+  db.profiles=db.profiles.filter(p=>p.id!==id);save();localStorage.removeItem("bh2_last");sessionStorage.removeItem("bh2_u");me=null;render();gate(db.profiles.length?"pick":"welcome")},true)}
+};
+function guard(it,what){if(isOwner(it))return true;toast(me?"Read-only: only the owner can "+what+" this listing":"Sign in to do this");return false}
+function removeItem(k,id,quiet){
+  const it=find(k,id);if(!it)return;if(!quiet&&!guard(it,"delete"))return;
+  const key=k==="loads"?"loadId":"truckId";
+  db.requests.filter(r=>r[key]===id&&r.status==="accepted").forEach(r=>{const o=r.by===it.owner?r.to:r.by;notify(o,"declined","Listing removed",`${ownerLine(it).name} removed a listing you were matched with.`,{tab:"inbox"})});
+  if(k==="loads"&&it.truckId){const t=find("trucks",it.truckId);if(t&&t.status==="booked")t.status="available"}
+  if(k==="trucks"){db.loads.forEach(l=>{if(l.truckId===id&&["matched","transit"].includes(l.status)){l.status="posted";l.truckId=null}})}
+  db.requests=db.requests.filter(r=>r[key]!==id);Object.keys(db.mk).forEach(x=>{if(x.split("|")[k==="loads"?0:1]===id)delete db.mk[x]});
+  if(k==="loads")db.loads=db.loads.filter(x=>x.id!==id);else db.trucks=db.trucks.filter(x=>x.id!==id);
+  save();if(!quiet){closeSheet();render();toast("Listing deleted")}}
+function setStatus(k,id,v){
+  const it=find(k,id);if(!it||!guard(it,"change"))return;
+  if(k==="loads"){
+    const t=it.truckId&&find("trucks",it.truckId),to=t&&t.owner;
+    const free=()=>{if(t&&["booked"].includes(t.status))t.status="available";it.truckId=null};
+    if(v==="transit"&&it.status==="matched"){it.status="transit";if(to)notify(to,"system","Load in transit",`${it.pCity} → ${it.dCity} is now in transit.`,{open:["loads",it.id]})}
+    else if(v==="delivered"&&it.status==="transit"){it.status="delivered";if(t&&t.status==="booked")t.status="available";if(to)notify(to,"system","Load delivered",`${it.pCity} → ${it.dCity} was marked delivered.`,{open:["loads",it.id]})}
+    else if(v==="cancelled"&&["posted","matched"].includes(it.status)){if(to)notify(to,"declined","Load cancelled",`${it.pCity} → ${it.dCity} was cancelled by the shipper.`,{tab:"inbox"});free();it.status="cancelled"}
+    else if(v==="posted"&&["matched","cancelled"].includes(it.status)){free();it.status="posted"}
+    else return;
+    it.updated=now();save();if(it.status==="posted")runMatching(it,"load")}
+  else{
+    if(v==="off"&&it.status==="available")it.status="off";
+    else if(v==="available"&&["off","booked"].includes(it.status)){it.status="available";db.loads.forEach(l=>{if(l.truckId===it.id&&["matched"].includes(l.status)){l.status="posted";l.truckId=null}})}
+    else return;
+    it.updated=now();save();if(it.status==="available")runMatching(it,"truck")}
+  render();toast("Status updated")}
+
+/* ---------- forms (submit delegation) ---------- */
+const F={
+async create(f){
+  const d=new FormData(f),name=clip(d.get("name"),60),pw=d.get("pw")||"",pw2=d.get("pw2")||"";
+  if(name.length<2)return toast("Enter your name or company");
+  if(pw&&pw.length<4)return toast("Password needs at least 4 characters");
+  if(pw!==pw2)return toast("Passwords don't match");
+  const c=city(d.get("city"))||CITIES[0];
+  const p={id:uid(),name,role:d.get("role")==="trucker"?"trucker":"shipper",city:c.name,country:c.country,lat:c.lat,lon:c.lon,phone:clip(d.get("phone"),24),cur:CURRENCIES.includes(d.get("cur"))?d.get("cur"):"USD",created:now(),set:{radius:150,alerts:true}};
+  if(pw)await setPw(p,pw);
+  db.profiles.push(p);save();signIn(p);toast("Profile created. Welcome, "+name.split(" ")[0]+".")},
+async unlock(f){
+  const d=new FormData(f),p=profileById(d.get("id"));if(!p)return;
+  if(await checkPw(p,d.get("pw")||""))signIn(p);else{$("#gerr").textContent="Wrong password. Try again.";const pi=f.elements.pw;pi.value="";pi.focus()}},
+load(f){
+  if(!me||me.role!=="shipper")return toast("Only shipper profiles can post loads");
+  const d=new FormData(f),id=d.get("id");let l=id?find("loads",id):null;
+  if(id&&(!l||!guard(l,"edit")))return;
+  const p=city(d.get("pCity")),q=city(d.get("dCity"));
+  if(!p||!q)return toast("Choose both cities");if(p.name===q.name)return toast("Pickup and drop-off must differ");
+  const w=parseFloat(d.get("weight"));if(!(w>0))return toast("Enter the weight in tonnes");
+  const lat=parseFloat(d.get("lat")),lon=parseFloat(d.get("lon")),gps=isFinite(lat)&&isFinite(lon);
+  const fields={pCity:p.name,pCountry:p.country,pLat:gps?lat:p.lat,pLon:gps?lon:p.lon,gps,dCity:q.name,dCountry:q.country,dLat:q.lat,dLon:q.lon,cargo:CARGO.includes(d.get("cargo"))?d.get("cargo"):CARGO[0],weight:w,truckType:TRUCK_TYPES.includes(d.get("truckType"))?d.get("truckType"):TRUCK_TYPES[0],date:d.get("date")||"",price:Math.max(0,parseFloat(d.get("price"))||0),cur:CURRENCIES.includes(d.get("cur"))?d.get("cur"):me.cur,notes:clip(d.get("notes"),400),oName:me.name,oPhone:me.phone,updated:now()};
+  if(l)Object.assign(l,fields);else{l=Object.assign({id:uid(),owner:me.id,status:"posted",created:now()},fields);db.loads.unshift(l)}
+  save();runMatching(l,"load");closeSheet();ui.kind="loads";render();toast(id?"Load updated":"Load posted to the board")},
+truck(f){
+  if(!me||me.role!=="trucker")return toast("Only trucker profiles can post trucks");
+  const d=new FormData(f),id=d.get("id");let t=id?find("trucks",id):null;
+  if(id&&(!t||!guard(t,"edit")))return;
+  const c=city(d.get("city"));if(!c)return toast("Choose your location");
+  const cap=parseFloat(d.get("cap"));if(!(cap>0))return toast("Enter the truck capacity in tonnes");
+  const lat=parseFloat(d.get("lat")),lon=parseFloat(d.get("lon")),gps=isFinite(lat)&&isFinite(lon);
+  const fields={plate:clip(d.get("plate"),20),type:TRUCK_TYPES.includes(d.get("type"))?d.get("type"):TRUCK_TYPES[0],cap,city:c.name,country:c.country,lat:gps?lat:c.lat,lon:gps?lon:c.lon,gps,from:COUNTRIES.includes(d.get("from"))?d.get("from"):c.country,to:COUNTRIES.includes(d.get("to"))?d.get("to"):c.country,avail:d.get("avail")||"",minPrice:Math.max(0,parseFloat(d.get("minPrice"))||0),cur:CURRENCIES.includes(d.get("cur"))?d.get("cur"):me.cur,notes:clip(d.get("notes"),400),oName:me.name,oPhone:me.phone,updated:now()};
+  if(t)Object.assign(t,fields);else{t=Object.assign({id:uid(),owner:me.id,status:"available",created:now()},fields);db.trucks.unshift(t)}
+  save();runMatching(t,"truck");closeSheet();ui.kind="trucks";render();toast(id?"Truck updated":"Truck posted to the board")},
+request(f){
+  const d=new FormData(f),k=d.get("k"),target=find(k,d.get("id")),mine=find(k==="loads"?"trucks":"loads",d.get("mine"));
+  if(!target||!mine||!me||mine.owner!==me.id)return;
+  const l=k==="loads"?target:mine,t=k==="loads"?mine:target;
+  if(db.requests.some(r=>r.loadId===l.id&&r.truckId===t.id&&r.status==="pending"&&r.by===me.id))return toast("You already sent this request");
+  const r={id:uid(),loadId:l.id,truckId:t.id,by:me.id,to:target.owner,role:me.role,msg:clip(d.get("msg"),240),status:"pending",created:now(),updated:now()};
+  db.requests.unshift(r);save();closeSheet();
+  if(isLocal(target.owner)){notify(target.owner,"request",`${me.name} requested your ${k==="loads"?"load":"truck"}`,`${l.pCity} → ${l.dCity} · ${t.type}, ${t.cap} t${r.msg?" · “"+r.msg+"”":""}`,{tab:"inbox"});render();toast("Request sent. The owner has been alerted.")}
+  else{render();const o=ownerLine(target);toast("Request saved. Send it to the owner directly.",3500);
+    shareSheet({title:"BorderHaul request",text:`Hi ${o.name}, I'd like to ${k==="loads"?"haul your load":"book your truck"} (${l.pCity} → ${l.dCity}, ${t.type} ${t.cap} t). ${r.msg}`.trim(),url:""})}},
+msg(f){
+  const th=db.threads.find(x=>x.id===ui.thread);if(!th||!me||(th.a!==me.id&&th.b!==me.id))return;
+  const text=clip(new FormData(f).get("text"),1000);if(!text)return;
+  db.messages.push({id:uid(),tid:th.id,from:me.id,text,ts:now()});th.hidden={};
+  const other=th.a===me.id?th.b:th.a;notify(other,"message","New message from "+me.name,text.slice(0,90),{thread:th.id});save();render();const i=$("#main .composer input");if(i)i.focus()},
+profile(f){
+  const d=new FormData(f),c=city(d.get("city"))||city(me.city);
+  me.name=clip(d.get("name"),60)||me.name;me.city=c.name;me.country=c.country;me.lat=c.lat;me.lon=c.lon;me.phone=clip(d.get("phone"),24);me.cur=CURRENCIES.includes(d.get("cur"))?d.get("cur"):me.cur;
+  [...db.loads,...db.trucks].forEach(x=>{if(x.owner===me.id){x.oName=me.name;x.oPhone=me.phone}});
+  save();closeSheet();render();toast("Profile saved")},
+async pw(f){
+  const d=new FormData(f),mode=d.get("mode"),err=m=>{$("#perr").textContent=m};
+  if(mode!=="set"&&!(await checkPw(me,d.get("old")||"")))return err("Current password is wrong.");
+  if(mode==="remove"){delete me.pw;save();closeSheet();render();return toast("Password removed")}
+  const n1=d.get("n1")||"";if(n1.length<4)return err("Use at least 4 characters.");if(n1!==d.get("n2"))return err("New passwords don't match.");
+  await setPw(me,n1);save();closeSheet();render();toast("Password saved")}
+};
+const C={
+filter(el){ui.f[el.dataset.k]=el.value;render()},
+gpsClear(el){const f=el.form;if(f&&f.elements.lat){f.elements.lat.value="";f.elements.lon.value="";const n=$("#gpsNote");if(n)n.textContent="Using the city centre."}},
+alertsToggle(el){me.set.alerts=el.checked;save();toast(el.checked?"Match alerts on":"Match alerts off")},
+radius(el){me.set.radius=parseInt(el.value,10)||150;save();runMatchingAll();toast("Match radius set to "+me.set.radius+" km")},
+importFile(el){const file=el.files&&el.files[0];if(!file)return;const rd=new FileReader();
+  rd.onload=()=>{try{const d=JSON.parse(rd.result);if(!d||d.v!==2||!Array.isArray(d.profiles))throw 0;
+    ask("Replace data on this device?","The backup replaces everything currently stored here, including profiles.","Replace",()=>{db=Object.assign(fresh(),d);save();me=null;localStorage.removeItem("bh2_last");sessionStorage.removeItem("bh2_u");render();gate(db.profiles.length?"pick":"welcome");toast("Backup restored")},true)}catch(e){toast("That file isn't a BorderHaul backup")}el.value=""};rd.readAsText(file)}
+};
+
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-act]");if(!el)return;
+  if(el.tagName==="A")return;
+  const fn=A[el.dataset.act];if(fn){e.preventDefault();try{fn(el)}catch(err){console.error(err);toast("Something went wrong. Please try again.")}}});
+document.addEventListener("submit",e=>{
+  const f=e.target.closest("form[data-form]");if(!f)return;e.preventDefault();
+  Promise.resolve().then(()=>F[f.dataset.form](f)).catch(err=>{console.error(err);toast("Something went wrong. Please try again.")})});
+document.addEventListener("change",e=>{const el=e.target.closest("[data-change]");if(el&&C[el.dataset.change])C[el.dataset.change](el)});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#sheet").hidden)closeSheet()});
+
+/* ---------- connectivity, cross-tab sync, install, service worker ---------- */
+window.addEventListener("online",()=>{render();toast("Back online")});
+window.addEventListener("offline",()=>{render();toast("You're offline. Everything still works.")});
+window.addEventListener("hashchange",importHash);
+window.addEventListener("storage",e=>{
+  if(e.key!==KEY)return;const before=new Set(db.notifs.map(n=>n.id));db=loadDB();
+  if(me){me=profileById(me.id);if(!me){render();return gate(db.profiles.length?"pick":"welcome")}
+    db.notifs.filter(n=>n.to===me.id&&!before.has(n.id)).forEach(n=>{toast(n.title);osNotify(n)})}
+  if(!ui.keep)render()});
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e;if(!$("#gate").hidden||ui.tab==="me")render()});
+window.addEventListener("appinstalled",()=>{deferred=null;toast("BorderHaul installed")});
+if("serviceWorker" in navigator){
+  let had=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(had)toast("Update installed. Reopen the app to use it.",6000);had=true;hdr()});
+  window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").then(r=>{if(navigator.onLine)r.update().catch(()=>{})}).catch(()=>{})})}
+
+/* ---------- boot ---------- */
+(function boot(){
+  const last=localStorage.getItem("bh2_last"),p=profileById(last);
+  render();
+  if(p){if(!p.pw||sessionStorage.getItem("bh2_u")===p.id)signIn(p);else gate("unlock",p.id)}
+  else gate(db.profiles.length?"pick":"welcome");
+  runMatchingAll();importHash()})();
+})();
+</script>
+</body>
+</html>
